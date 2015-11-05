@@ -13,7 +13,7 @@ def main():
 
 
     output_list = []
-    retry_counter, retry_limit, retry_time_seconds = 0, 100, 360
+    retry_counter, retry_limit, retry_time_seconds = 0, 100, int(input("What should the retry interval be?\n"))
 
     # completed_list_copy = deepcopy(completed_list)
     def get_input_file():
@@ -32,15 +32,18 @@ def main():
 
     h = httplib2.Http(".cache")
 
+    num_char_dict = {0:'th', 1:'st', 2:'nd', 3:'rd', 4:'th', 5:'th', 6:'th', 7:'th', 8:'th', 9:'th'}
     def request_data(startIndex):
-        nonlocal retry_counter, retry_limit, retry_time_seconds
+        nonlocal retry_counter, retry_limit, retry_time_seconds, num_char_dict
         get_params['startIndex'] = startIndex
         response, content = h.request(google_api + "?" + urlencode(get_params))
         if response.status != 200:
             if "userRateLimitExceededUnreg" in str(content) and retry_counter < retry_limit:
                 retry_counter += 1
+                print("Waiting to get the hold lifted from Google")
                 time.sleep(retry_time_seconds)
-                print("Retrying for the %d time" %(retry_counter))
+
+                print("Retrying for the %d'%s time" %(retry_counter, num_char_dict[retry_counter % 10]))
                 request_data(startIndex)
             else:
                 print("Response to google api was %s.\nContent is %s" %(response, content))
@@ -91,12 +94,13 @@ def main():
             index_counter += maxResults
             print("Number of retrieved items %d" %len(output_list), end='\r')
             data = request_data(index_counter)
-
         out_data = json.dumps(output_list)
-        # print(out_data)
+        print("", end="\r")
         with open("input/" + category, mode='w', encoding='utf-8') as a_file:
+            print("Writing data in input/", category)
             a_file.write(out_data)
-
+        completed_categories.append(category)
+        print("Finished %.2f%%" % (100*len(completed_categories)/len(category_list)))
     # index_counter = 0
     # get_params['q'] = "algorithm"
     # data = request_data(index_counter)

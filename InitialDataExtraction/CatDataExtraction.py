@@ -12,13 +12,14 @@ def main():
             print("Status code ", response.status)
             return
         soup = BeautifulSoup(content, 'html.parser')
-
         data = soup.find_all("a", class_="mediumText actionLinkLite")
         for x in data:
             category_list.append(str(x.string))
 
-    with open("InitialDataExtraction/category_list", mode='w', encoding="utf-8") as a_file:
-        a_file.write(str(category_list))
+    data = "category_list = " + str(category_list)
+
+    with open("InitialDataExtraction/category_list.py", mode='w', encoding="utf-8") as a_file:
+        a_file.write(data)
     print(len(category_list))
 if __name__ == '__main__':
     main()
