@@ -1,4 +1,5 @@
 from category_list import category_list
+from Collections import get_files_in_input_dir
 from urllib.parse import urlencode
 import httplib2
 import json
@@ -11,28 +12,27 @@ def main():
     google_api = "https://www.googleapis.com/books/v1/volumes"
     get_params = {'langRestrict': 'en', 'maxResults': maxResults, 'printType': 'books', 'orderBy': 'newest'}
 
-
+    completed_items_set = set()
     output_list = []
     retry_counter, retry_limit, retry_time_seconds = 0, 100, int(input("What should the retry interval be?\n"))
 
-    # completed_list_copy = deepcopy(completed_list)
-    def get_input_file():
-        import sys
-        from os import walk
-        path = sys.argv[0].split('/')
-        path.pop(len(path)-1)
-        path.append("input")
-        path = '/'.join(path)
-        f = []
-        for (dirpath, dirnames, filenames) in walk(path):
-            f.extend(filenames)
-        return f
+    try:
+        with open("completed_items_checklist", mode='r', encoding='utf-8') as a_file:
+            for line in a_file.readlines():
+                completed_items_set.add(line)
+    except FileNotFoundError:
+        pass
 
-    completed_categories = get_input_file()
+    def write_to_completed_items_checklist(data):
+        with open("completed_items_checklist", mode='a', encoding='utf-8') as a_file:
+            a_file.write(data + "\n")
+
+    completed_categories = get_files_in_input_dir()
 
     h = httplib2.Http(".cache")
 
     num_char_dict = {0:'th', 1:'st', 2:'nd', 3:'rd', 4:'th', 5:'th', 6:'th', 7:'th', 8:'th', 9:'th'}
+
     def request_data(startIndex):
         nonlocal retry_counter, retry_limit, retry_time_seconds, num_char_dict
         get_params['startIndex'] = startIndex
@@ -75,6 +75,8 @@ def main():
             for item in data['items']:
                 temp_item_dict = {}
                 temp_item_dict['id'] = item['id']
+                if temp_item_dict['id'] in completed_items_set:
+                    continue
                 for param in required_data:
                     try:
                         temp_item_dict[param] = item['volumeInfo'][param]
@@ -91,8 +93,10 @@ def main():
                                     # print("Couldn't get isbn ")
                         temp_item_dict.pop('industryIdentifiers')
                 output_list.append(temp_item_dict)
-            index_counter += maxResults
-            print("Number of retrieved items %d" %len(output_list), end='\r')
+                completed_items_set.add(temp_item_dict['id'])
+                write_to_completed_items_checklist(temp_item_dict['id'])
+            index_counter += len(data['items'])
+            print("Number of retrieved items %d" % len(output_list), end='\r')
             data = request_data(index_counter)
         out_data = json.dumps(output_list)
         print("", end="\r")
