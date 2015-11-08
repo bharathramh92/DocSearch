@@ -22,7 +22,7 @@ def main():
                 completed_items_set.add(line)
     except FileNotFoundError:
         pass
-
+    print("Total books retrieved so far %d" %(len(completed_items_set)))
     def write_to_completed_items_checklist(data):
         with open("completed_items_checklist", mode='a', encoding='utf-8') as a_file:
             a_file.write(data + "\n")

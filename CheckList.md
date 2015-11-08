@@ -1,4 +1,4 @@
 Data Collection
 
 - [x] Keywords retrieval
-- [ ] Querying in Google api
+- [x] Querying in Google api
