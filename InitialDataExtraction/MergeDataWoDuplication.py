@@ -6,8 +6,10 @@ def main():
     input_file_list = get_files_in_input_dir()
 
     item_ids, total_items, total_duplicates = set(), 0, 0
-
+    count = 0
     for fl in input_file_list:
+        if fl[0] == '.':        # avoiding hidden file
+            continue
         out_data = []
         with open("input/" + fl, mode='r', encoding='utf-8') as a_file:
             for line in a_file.readlines():
@@ -19,8 +21,10 @@ def main():
                         out_data.append(data)
                     else:
                         total_duplicates += 1
-        with open("input_sanitized/" + fl, mode='w', encoding='utf-8') as a_file:
-            a_file.write(str(out_data))
+        with open("input_sanitized/" + str(count), mode='w', encoding='utf-8') as a_file:
+            for data in out_data:
+                a_file.write(str(data) + "\n")
+        count += 1
 
     print("Total duplicates found were %d, and total items were %d" %(total_duplicates, total_items))
 
