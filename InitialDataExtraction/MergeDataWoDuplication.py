@@ -23,7 +23,7 @@ def main():
         if len(out_data) > 0:
             with open("input_sanitized/data", mode='a', encoding='utf-8') as a_file:
                 for data in out_data:
-                    a_file.write(str(data) + "\n")
+                    a_file.write(json.dumps(data) + "\n")
 
     print("Total duplicates found were %d, and total items were %d" %(total_duplicates, total_items))
 
