@@ -6,6 +6,7 @@ def main():
     input_file_list = get_files_in_input_dir()
 
     item_ids, total_items, total_duplicates = set(), 0, 0
+    complete_json = []
     for fl in input_file_list:
         if fl[0] == '.':        # avoiding hidden file
             continue
@@ -24,6 +25,9 @@ def main():
             with open("input_sanitized/data", mode='a', encoding='utf-8') as a_file:
                 for data in out_data:
                     a_file.write(json.dumps(data) + "\n")
+                    complete_json.append(data)
+    with open("data.json", mode='w', encoding='utf-8') as a_fl:
+        a_fl.write(json.dumps(complete_json))
 
     print("Total duplicates found were %d, and total items were %d" %(total_duplicates, total_items))
 
