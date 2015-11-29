@@ -1,10 +1,10 @@
 #using spark
-
 import sys
 import os
 from pyspark import SparkContext
 import json
 import re
+from nltk.stem.wordnet import WordNetLemmatizer
 
 
 if len(sys.argv) != 2:
@@ -17,12 +17,9 @@ sc = SparkContext(appName="DataStructureDef")
 
 
 def main():
-    # Input yx file has y_i as the first element of each line
-    # and the remaining elements constitute x_i
-    # attribute_weight = {'publisher', 'authors', 'description', 'id', 'ISBN_10', 'maturityRating', 'title', 'infoLink', 'ISBN_13', 'pageCount'}
-    # dict_keys(['imageLinks', 'title', 'ISBN_13', 'maturityRating', 'ISBN_10', 'id', 'pageCount', 'description', 'authors', 'infoLink', 'publisher'])
     # Total books 128326
-    # Validated that all data have unique id. Therefore using id as the identifier for books
+    # Validated that all data have unique id. Therefore using id as the identifier for books.
+    # Ref. data_validation.py
     data = sc.textFile("Resources/data_keywords")
 
     def author_zone_map_helper(line):
@@ -37,12 +34,13 @@ def main():
 
     def title_zone_map_helper(line):
         entity = "title"
+        lemmatizer = WordNetLemmatizer()
         book = json.loads(line)
         title_combinations_dict = {}
         if entity in book:
             author = book[entity]
             for title_split in re.findall(r"[a-zA-Z]+", author):
-                title_combinations_dict[title_split.lower()] = [book["id"]]
+                title_combinations_dict[lemmatizer.lemmatize(title_split.lower())] = [book["id"]]
         return tuple(title_combinations_dict.items())
 
     def publisher_zone_map_helper(line):
@@ -57,12 +55,13 @@ def main():
 
     def keyWords_zone_map_helper(line):
         entity = "keyWords"
+        lemmatizer = WordNetLemmatizer()
         book = json.loads(line)
         keyWord_combinations_dict = {}
         if entity in book:
             keyWords = book[entity]
             for keyWord in keyWords:
-                keyWord_combinations_dict[keyWord.lower()] = [book["id"]]
+                keyWord_combinations_dict[lemmatizer.lemmatize(keyWord.lower())] = [book["id"]]
         return tuple(keyWord_combinations_dict.items())
 
     def isbn_zone_map_helper(line):
@@ -81,12 +80,13 @@ def main():
     keyWords_zone = data.flatMap(keyWords_zone_map_helper).reduceByKey(lambda x, y: x + y)
     isbn_zone = data.flatMap(isbn_zone_map_helper).reduceByKey(lambda x, y: x + y)
 
-    print(author_zone.count())
-    print(title_zone.count())
-    print(publisher_zone.count())
-    print(keyWords_zone.count())
-    print(isbn_zone.count())
+    author_zone.saveAsTextFile("Resources/author_rdd")
+    title_zone.saveAsTextFile("Resources/title_rdd")
+    publisher_zone.saveAsTextFile("Resources/publisher_rdd")
+    keyWords_zone.saveAsTextFile("Resources/keyWords_rdd")
+    isbn_zone.saveAsTextFile("Resources/isbn_rdd")
 
     sc.stop()
+
 if __name__ == '__main__':
     main()
