@@ -17,6 +17,7 @@ def main():
     # Total books 128326
     # Validated that all data have unique id. Therefore using id as the identifier for books.
     # Ref. data_validation.py
+    # lemma for title_zone, category_zone, keyword_zone
     data = sc.textFile("Resources/data_keywords")
 
     def author_zone_map_helper(line):
@@ -36,7 +37,7 @@ def main():
         title_combinations_dict = {}
         if entity in book:
             author = book[entity]
-            for title_split in re.findall(r"[a-zA-Z]+", author):
+            for title_split in re.findall(r"[a-zA-Z0-9]+", author):
                 title_combinations_dict[lemmatizer.lemmatize(title_split.lower())] = [book["id"]]
         return tuple(title_combinations_dict.items())
 
@@ -68,6 +69,7 @@ def main():
             book = json.loads(line)
             if entity in book:
                 isbn = book[entity]
+                isbn = "".join(isbn.split("-"))         # Stripping off - in ISBN-13
                 isbn_combinations_dict[isbn.lower()] = [book["id"]]
         return tuple(isbn_combinations_dict.items())
 
@@ -78,7 +80,7 @@ def main():
         category_combinations_dict = {}
         if entity in book:
             for category in book[entity]:
-                for cat_split in re.findall(r"[a-zA-Z]+", category):
+                for cat_split in re.findall(r"[a-zA-Z0-9]+", category):
                     category_combinations_dict[lemmatizer.lemmatize(cat_split.lower())] = [book["id"]]
         return tuple(category_combinations_dict.items())
 
@@ -90,7 +92,7 @@ def main():
     category_zone = data.flatMap(category_zone_map_helper).reduceByKey(lambda x, y: x + y)
     author_zone.saveAsTextFile("Resources/author_rdd")
     title_zone.saveAsTextFile("Resources/title_rdd")
-    publisher_zone.saveAsTextFile("Resources/publisher_rdd")
+    publisher_zone.saveAsTe/xtFile("Resources/publisher_rdd")
     key_words_zone.saveAsTextFile("Resources/keyWords_rdd")
     isbn_zone.saveAsTextFile("Resources/isbn_rdd")
     category_zone.saveAsTextFile("Resources/category_rdd")
