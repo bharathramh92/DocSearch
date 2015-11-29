@@ -7,9 +7,6 @@ import re
 from nltk.stem.wordnet import WordNetLemmatizer
 
 
-if len(sys.argv) != 2:
-    print("Usage: linreg <datafile>")
-    exit(-1)
 os.environ['SPARK_HOME']="/home/bharath/spark-1.5.1"
 os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
 os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
