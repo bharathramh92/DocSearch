@@ -6,7 +6,7 @@ import java.util.HashMap;
 public class Book {
     String description, title, ISBN_13, maturityRating, ISBN_10, id, pageCount, infoLink;
     String publisher;
-    String[] authors, keyWords;
+    String[] authors, keyWords, categories;
 
     public String getDescription() {
         return description;
