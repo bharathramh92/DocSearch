@@ -47,7 +47,7 @@ def main():
         publisher_combinations_dict = {}
         if entity in book:
             author = book[entity]
-            for auth_split in re.findall(r"[a-zA-Z]+", author):
+            for auth_split in re.findall(r"[a-zA-Z0-9]+", author):
                 publisher_combinations_dict[auth_split.lower()] = [book["id"]]
         return tuple(publisher_combinations_dict.items())
 
@@ -92,7 +92,7 @@ def main():
     category_zone = data.flatMap(category_zone_map_helper).reduceByKey(lambda x, y: x + y)
     author_zone.saveAsTextFile("Resources/author_rdd")
     title_zone.saveAsTextFile("Resources/title_rdd")
-    publisher_zone.saveAsTe/xtFile("Resources/publisher_rdd")
+    publisher_zone.saveAsTextFile("Resources/publisher_rdd")
     key_words_zone.saveAsTextFile("Resources/keyWords_rdd")
     isbn_zone.saveAsTextFile("Resources/isbn_rdd")
     category_zone.saveAsTextFile("Resources/category_rdd")
