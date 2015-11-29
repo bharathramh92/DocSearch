@@ -5,12 +5,15 @@ from pyspark import SparkContext
 import json
 import re
 from nltk.stem.wordnet import WordNetLemmatizer
+from collections import defaultdict
 
-
-os.environ['SPARK_HOME']="/home/bharath/spark-1.5.1"
+os.environ['SPARK_HOME'] = "/home/bharath/spark-1.5.1"
 os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
 os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
 sc = SparkContext(appName="DataStructureDef")
+
+model_weightage = {'isbn_zone': .3, 'author_zone': .18, 'publisher_zone': .15, 'title_zone': .15, 'category_zone': .12,
+                   'key_word_zone': .1}
 
 def get_docs():
     author_zone = sc.textFile("Resources/author_rdd")
@@ -32,7 +35,7 @@ def get_docs():
     query_term_docs, lemmatizer = {}, WordNetLemmatizer()
 
     for term in re.findall(r"([\w]+[\-]*[\w]+)", query_term):
-        term_documents = set()
+        term_documents = {}
         term_lemma = lemmatizer.lemmatize(term.lower())   # Lemmatized term
         # Lemmatized term and term will have numbers. Hence no problem in taking any of those for number presence check.
         # Checking whether a number is present or not
@@ -56,7 +59,7 @@ def get_docs():
             key_words_term = term_lemma     # lemmatized and can have numbers
 
         if strict_not_category:
-            category_term = term    # lemmatized and can have numbers
+            category_term = term_lemma    # lemmatized and can have numbers
 
         if strict_not_isbn and has_number:
             num_isbn_split = "".join(term.split("-"))
@@ -73,60 +76,61 @@ def get_docs():
         key_words_docs, isbn_docs, category_docs = [], [], []
         if auth_term is not None:
             try:
-                raw_docs_collections = author_zone.filter(lambda line: term in eval(line)[0])
+                raw_docs_collections = author_zone.filter(lambda line: term == eval(line)[0])
                 docs_collect = raw_docs_collections.collect()
                 auth_docs = eval(docs_collect[0])[1]
                 # print("author ", auth_docs)
-                term_documents.update(auth_docs)
+                term_documents['author_zone'] = tuple(auth_docs)
             except:
                 pass
 
         if title_term is not None:
             try:
-                raw_docs_collections = title_zone.filter(lambda line: term in eval(line)[0])
+                raw_docs_collections = title_zone.filter(lambda line: term == eval(line)[0])
                 docs_collect = raw_docs_collections.collect()
                 title_docs = eval(docs_collect[0])[1]
                 # print("title ", title_docs)
-                term_documents.update(title_docs)
+                term_documents['title_zone'] = tuple(title_docs)
             except:
                 pass
 
         if publisher_term is not None:
             try:
-                raw_docs_collections = publisher_zone.filter(lambda line: term in eval(line)[0])
+                raw_docs_collections = publisher_zone.filter(lambda line: term == eval(line)[0])
                 docs_collect = raw_docs_collections.collect()
                 publisher_docs = eval(docs_collect[0])[1]
                 # print("publisher ", publisher_docs)
-                term_documents.update(publisher_docs)
+                term_documents['publisher_zone'] = tuple(publisher_docs)
             except:
                 pass
 
         if key_words_term is not None:
             try:
-                raw_docs_collections = key_words_zone.filter(lambda line: term in eval(line)[0])
+                raw_docs_collections = key_words_zone.filter(lambda line: term == eval(line)[0])
                 docs_collect = raw_docs_collections.collect()
                 key_words_docs = eval(docs_collect[0])[1]
                 # print("key_words ", key_words_docs)
-                term_documents.update(key_words_docs)
+                term_documents['key_word_zone'] = tuple(key_words_docs)
             except:
                 pass
 
         if isbn_term is not None:
             try:
-                raw_docs_collections = isbn_zone.filter(lambda line: term in eval(line)[0])
+                raw_docs_collections = isbn_zone.filter(lambda line: term == eval(line)[0])
                 docs_collect = raw_docs_collections.collect()
                 isbn_docs = eval(docs_collect[0])[1]
                 # print("isbn ", isbn_docs)
-                term_documents.update(isbn_docs)
+                term_documents['isbn_zone'] = tuple(isbn_docs)
             except:
                 pass
 
         if category_term is not None:
             try:
-                raw_docs_collections = category_zone.filter(lambda line: term in eval(line)[0])
+                raw_docs_collections = category_zone.filter(lambda line: term == eval(line)[0])
                 docs_collect = raw_docs_collections.collect()
                 category_docs = eval(docs_collect[0])[1]
                 # print("category ", category_docs)
+                term_documents['isbn_zone'] = tuple(isbn_docs)
                 term_documents.update(category_docs)
             except:
                 pass
@@ -143,40 +147,35 @@ def main():
     # print(k_docs)
 
     docs_dict = get_docs()
-    # docs_dict = {'cormen': {'i-bUBQAAQBAJ', 'g8d3PwAACAAJ', '46JvnQEACAAJ', 'AGAiAgAAQBAJ', 'JtlDAAAACAAJ', 'he2koAEACAAJ', 'YsE2pwAACAAJ', 'dEplHQAACAAJ', 'yfnloQEACAAJ', '7cNgPwAACAAJ', 'ZLN9CQAAQBAJ', 'mmFGSwAACAAJ', 'nunPngEACAAJ', 'COxdlgEACAAJ', 'NdSXoAEACAAJ', 'Zl-lcQAACAAJ', 'Jwr8jwEACAAJ', '5kmsSgAACAAJ', 'unDKrQEACAAJ', 'NLngYyWFl_YC', 'm2QwnwEACAAJ', 'Ew--ngEACAAJ', 'pUGYSQAACAAJ', 'jUF9BAAAQBAJ', '3QU2SgAACAAJ', 'z73loAEACAAJ', 'F3anBQAAQBAJ', 'aefUBQAAQBAJ', 'EUrXoAEACAAJ', 'h2xRPgAACAAJ', 'r-oGPLclJc0C', 'HbxILgEACAAJ', '0hX5ygAACAAJ', 'eW84rgEACAAJ', 'U2P3NwAACAAJ'}, 'thomas': {'HKtHIwpxjqIC', 'Vk4nAgAAQBAJ', 'EMcCRIenE_UC', 'YsFMAgAAQBAJ', 'fNC3fdxYgZMC', '3sS9ehOCEC8C', 'agr9VJf59EAC', 'oiKMBQAAQBAJ', 'x0qEAgAAQBAJ', '8blUBAAAQBAJ', 'xMvEIAsuy3gC', 'yA6POMQa_HgC', 'yN84TKB6rXIC', '8Qe2AwAAQBAJ', 'dLTpAwAAQBAJ', 'e1HcVQJE34EC', 'bVVbR1jgARQC', 'hFEnAgAAQBAJ', 'HRr6LXmlVm8C', 'lHAkBQAAQBAJ', '__C0AwAAQBAJ', 'KHEkBQAAQBAJ', '_cEjBQAAQBAJ', 'hQi2AwAAQBAJ', 'Ry64BAAAQBAJ', 'pbaJVzdNMGgC', 'p8gScvl9lucC', '5roYBAAAQBAJ', 'sMJg6nKaLXMC', 'TJQU1i33Fd8C', 'FKVY1ybWQi4C', 'l_ICBAAAQBAJ', 'zajgJy6F_h4C', 'm4iwBAAAQBAJ', '8e7UAAAAQBAJ', '3TCZxMJ_mLAC', 'DiuiCE-WmgEC', '0JW-rQEACAAJ', 'BeSVPDPwf8IC', 'q08VCgAAQBAJ', 'muUp_YW6IikC', 'w1t9oAEACAAJ', 'jK4QyY4vIHgC', '3fG0AwAAQBAJ', 'Lnfr0efDl0gC', '6pWWYFeiQbkC', '0LMeBgAAQBAJ', 'SnLF5AUpucMC', 'gpfEh1slfPUC', 'odWwa3jFzVMC', 'Wh3mVlAjxE8C', 'Mp5FCgAAQBAJ', '55Mf8bRkLHcC', 'Upy8D3Qo8IIC', 'qINa6ZzeYU4C', 'lGGjTCsxYrEC', 'kx2MBQAAQBAJ', '_xhGLwEACAAJ', 'lvK0AwAAQBAJ', 'Svw56Kfkx5gC', 'xkb0KBpKHmsC', '8d54p2PP6VwC', 'D2eDbwAACAAJ', 'VSGMBQAAQBAJ', 'eiGMBQAAQBAJ', 'FZRD4o9e8-4C', 'Cia1AwAAQBAJ', 'vJY-COOkrxIC', 'maaRptUU23UC', 'iu60AwAAQBAJ', 'mbZEaK1p1aUC', 'HAQQQcoXE7cC', 'hwO7S55TUvkC', 'vdgZ9FsLvscC', 'IKTFAgAAQBAJ', 'rXXe9Q_shUcC', 'YAi2AwAAQBAJ', 'iLGwqxw5UlEC', 'KZJRBAAAQBAJ', 'vL0PBgAAQBAJ', 'JX-nCgAAQBAJ', 'KfShAgAAQBAJ', 'A4lwAwAAQBAJ', 'eKG1AwAAQBAJ', 'WZnVoQEACAAJ', 'ta2LBQAAQBAJ', 'h-H3AgAAQBAJ', 'nRSMBQAAQBAJ', 'NUR3CAAAQBAJ', '3XrAoznss68C', 'tiUeAwAAQBAJ', '9H_zBgAAQBAJ', 'NKY37Flu9GcC', 'KvO0AwAAQBAJ', '7jzFAgAAQBAJ', 'Sn-nCgAAQBAJ', 'XHfYYW5uDSAC', '1yqRBQAAQBAJ', 'TBIlXe0M2UkC', 'Th1dCgFYvo4C', 'BJmNdRxGho0C', 'kRUz8yq4HJUC', '7mp-AgAAQBAJ', '1N8katBAbJoC', '0Nh0CgAAQBAJ', 'aMjehs6iXoQC', 'm4Zozc-14VwC', 'h3x1nVfkpaAC', 'COxdlgEACAAJ', 'UD663DTHewUC', 'LqG1AwAAQBAJ', '8rtVcpqOhGQC', '6mzeuYfqrp0C', 'aXd_tjdwb84C', 'qqtLbwAACAAJ', '2Wzni9OuPNMC', 'wTLvchzY9eQC', 'XPGCtgAACAAJ', 'gQnb2ewvlLYC', 'HfDUAAAAQBAJ', 'gB2NBgAAQBAJ', 'W7X4jgvvdikC', 'r4jlBgAAQBAJ', 'eg8lkuT0vV4C', 'ElSNcpqGOw0C', 'hK4Ew-fXRagC', 'wRYvCvkhwmAC', '5s3ICxgCuiAC', 'WxVTBAAAQBAJ', 'LQlQBAAAQBAJ', 'GqPIPvCbAv0C', '9kI6bAkYx0oC', 'Ei2FCC1v7PkC', 'LNojrgEACAAJ', 'MROAl7JUgHQC', 'L2LrAgAAQBAJ', 'dweQK8BSgPoC', 'MazDUeO5UzIC', 'Ph04BAAAQBAJ', 'ngUcvG7RmIoC', 'ZRqMBQAAQBAJ', '5OfWrQEACAAJ', 'PhrFAgAAQBAJ', 'iv6Uth4ZxMsC', 'v46Z1hUcud8C', 'KOrHoQEACAAJ', 'bmxAYgEACAAJ', 'b_ECBAAAQBAJ', 'cYUzRMFkVHUC', '5LUF-AUIz2kC', 'lBuZSQAACAAJ', 'A3EkBQAAQBAJ', 'ZFAVCgAAQBAJ', 'Gvj-oAEACAAJ', '7mOOBAAAQBAJ', 'y8caBQAAQBAJ', '37HI2RpU1jMC', '6BBwAwAAQBAJ', 'S3wSTfB65c8C', '3Q0930ersqwC', 'zBGm6vxcI4cC', '3PwHHSrPJfUC', 'y1fDCAAAQBAJ', '5g-94jmpmVAC', 'kRyMBQAAQBAJ', 'EjMS0oZJQ-wC', 'Hw4gWVAoz8kC', 'UcqxCAAAQBAJ', 'cCZ2kJmL1pIC', 'emHWx_0DDOcC', 'vh-MBQAAQBAJ', 'Sh2MBQAAQBAJ', 'Wh5XTdZFUCwC', '4EccO3iAB-8C', 'p2EMm24WqVYC', 'w1_LeeZkKAIC', 'gNcgvoypGo0C', 'i03oBAAAQBAJ', 'iboi4uBNycwC', 'NwrdBE45GTYC', 'RDd1ifhdiZEC', '508_hiGO5WMC', 'CUhWCgAAQBAJ', 'C-nEHgDyfGwC', 'S1RNBAAAQBAJ', 'zD3FAgAAQBAJ', 'tTSOAwAAQBAJ', 'PcgUuR9KoVYC', 'yYISw61HPyUC', '7l-3AwAAQBAJ', 'dYqVAhKfLakC', 'PoU8X71uDYkC', 'gKMql-HcnUYC', 'n1qaOUDfCeEC', 'ExUPpuqhTjUC', 'x0reoAEACAAJ', '2VD_BgAAQBAJ', '8FfgtnsvTRAC', 'ZuT7oAEACAAJ', 'K0H1mmJZ24sC', 'rfLCAwAAQBAJ', 'itz6rQEACAAJ', 'Dd7VrQEACAAJ', 'yqlT1QLq4K0C', 'bjv2nQEACAAJ', '7XUkBQAAQBAJ', 'wjWmoAEACAAJ', 'eSdMaF7ONyEC', 'ADdaMuROihQC', 'ZkZlpYjJIi4C', '9wbsngH6C8kC', 'HBvFAgAAQBAJ', 'fDqQBQAAQBAJ', 'VRe0AwAAQBAJ', 'SQUMAQAAQBAJ', 'Vcc0AAAAQBAJ', 'mCfqCAAAQBAJ', 'ZzQ3BAAAQBAJ', '65h7BAAAQBAJ', '8vi0AwAAQBAJ', 'ptjqAYi4GdwC', 'WzbUevKfXH4C', '7AHSTeFtgOMC', 'eZIToh9HlwUC', 'MoYosRUL4QcC', 'PeH3AgAAQBAJ', 'xLP3sa-bnkoC', 'baagBgAAQBAJ', 'AGAiAgAAQBAJ', 'Bkl3BQZimO0C', 'Ew_P1mylvJQC', 'AqLDrQEACAAJ', '-JkP_OPXgaQC', '2y5oAgAAQBAJ', 'zR2TAAAACAAJ', '7aaTBQAAQBAJ', 'Qg9o6G-EDwsC', 'izOvRWOzKgEC', 'Fg81NnVsY3sC', '2aNkRSrkfP8C', 'V4IQH8Tqr4sC', 'NyTEWziny_IC', 'wXOaOXxQ3bcC', 'UNbMBgAAQBAJ', 'HmZe35wO9_gC', 'Uy6CBwAAQBAJ', 'jNu3XyA0yz0C', 'cS8BywAACAAJ', 'nGWBBgAAQBAJ', '3mVevn3NWYAC', 'aBVXkYm8C-AC', 'cLFvBQAAQBAJ', 'RjdBAwAAQBAJ', 'pSGHSQAACAAJ', 'z0aUEPNxDVMC', 'mTnG1DV-_PEC', 'jt59AwAAQBAJ', '7eIO4CuUZ94C', 'kwA8dk_L5w4C', 'IakVOAAACAAJ', 'WMN7AgAAQBAJ', '9fUBwrjY3E0C', 'bvZ-W9AMRpMC', 'U0Z1a80-UtIC', 'WU7wrQEACAAJ', 'EoF9BgAAQBAJ', 'cR6MBQAAQBAJ', 'P7OVYI9Gy6sC', '-RqMBQAAQBAJ', 'CqCvCAAAQBAJ', 'IVUnAgAAQBAJ', 'QzQ4AwAAQBAJ', 'ocT4oAEACAAJ', 'imftctLz1PAC', 'xZMAADFmJSoC', 'YvQcBQAAQBAJ', 'oM2FRyqFxkwC', 'msFsx6XtNXAC', 'gLicAgAAQBAJ', '74rlm2k97s0C', 'iS43zLZH1YUC', 'wbwAz2HXhacC', 'ul0kFIxtMfkC', 'lZGDQBeLqD0C', 'IOxYYlAPPGQC', 'yiOMBQAAQBAJ', 'Hj0GCgAAQBAJ'}}
-    print(docs_dict)
+    weighted_docs_dict = defaultdict(int)
+    # terms_sorted = sorted(docs_dict, key=lambda doc_list_key: len(docs_dict[doc_list_key]))
+    # for k in terms_sorted:
+    #     print(k, " ", len(docs_dict[k]))
+    # previous_computed_doc_ids = terms_sorted[0]
+    # for term in terms_sorted[1:]:
+    #     next_doc_ids = set()
+    #     if len(docs_dict[previous_computed_doc_ids]) <= len(docs_dict[term]):
+    #         short = docs_dict[previous_computed_doc_ids]
+    #         long  = docs_dict[term]
+    #     else:
+    #         long = docs_dict[previous_computed_doc_ids]
+    #         short = docs_dict[term]
+    #     for item_in_short in short:
+    #         if item_in_short in long:
+    #             next_doc_ids.add(item_in_short)
+    #     previous_computed_doc_ids = next_doc_ids
+    # print(len(previous_computed_doc_ids))
+    # print(previous_computed_doc_ids)
+    # print(docs_dict)
     for k, v in docs_dict.items():
-        print(k , " ", len(v))
-    terms_sorted = sorted(docs_dict, key=lambda doc_list_key: len(docs_dict[doc_list_key]))
-
-    # buffer_set = {}
-    # for doc_id_list in docs_dict.values():
-    #     for doc_id in doc_id_list:
-    #         buffer_set[doc_id] = True
-    # for doc_id_list in docs_dict.values():
-    #     for doc_id in buffer_set:
-    #         if doc_id not in doc_id_list:
-    #             buffer_set[doc_id] = False
-    # for doc_id, status in buffer_set.items():
-    #     if status:
-    #         print(doc_id)
-    print(terms_sorted)
-    previous_computed_doc_ids = terms_sorted[0]
-    for term in terms_sorted[1:]:
-        next_doc_ids = set()
-        if len(docs_dict[previous_computed_doc_ids]) <= len(docs_dict[term]):
-            short = docs_dict[previous_computed_doc_ids]
-            long  = docs_dict[term]
-        else:
-            long = docs_dict[previous_computed_doc_ids]
-            short = docs_dict[term]
-        for item_in_short in short:
-            if item_in_short in long:
-                next_doc_ids.add(item_in_short)
-        previous_computed_doc_ids = next_doc_ids
-
-    print(previous_computed_doc_ids)
-
+        for entity, doc_ids in v.items():
+            for doc_id in doc_ids:
+                weighted_docs_dict[doc_id] += model_weightage[entity]*1
+    ranking_key = sorted(weighted_docs_dict, key= lambda key: weighted_docs_dict[key])
+    ranking_score_list = []
+    for doc_id in ranking_key:
+        ranking_score_list.append((doc_id, weighted_docs_dict[doc_id]))
+    print(ranking_score_list)
     sc.stop()
 
 if __name__ == '__main__':
