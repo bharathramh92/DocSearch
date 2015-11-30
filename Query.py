@@ -28,14 +28,16 @@ def get_docs():
     strict_not_auth, strict_not_title, strict_not_publisher = True, True, True
     strict_not_key_words, strict_not_isbn, strict_not_category = True, True, True
 
-    # query_term = 'cormen thomas data algorithm'
+    # query_term = 'data algorithm'
     # query_term = "5324302432 abc-5324302432"
-    query_term =  "9780262033848 9780262259460"
+    # query_term =  "9780262033848 9780262259460"
     query_term = "cormen thomas"
     query_term_docs, lemmatizer = {}, WordNetLemmatizer()
+    term_ids_mapping = {}
 
     for term in re.findall(r"([\w]+[\-]*[\w]+)", query_term):
         term_documents = {}
+        ids = set()
         term_lemma = lemmatizer.lemmatize(term.lower())   # Lemmatized term
         # Lemmatized term and term will have numbers. Hence no problem in taking any of those for number presence check.
         # Checking whether a number is present or not
@@ -81,6 +83,7 @@ def get_docs():
                 auth_docs = eval(docs_collect[0])[1]
                 # print("author ", auth_docs)
                 term_documents['author_zone'] = tuple(auth_docs)
+                ids.update(auth_docs)
             except:
                 pass
 
@@ -91,6 +94,7 @@ def get_docs():
                 title_docs = eval(docs_collect[0])[1]
                 # print("title ", title_docs)
                 term_documents['title_zone'] = tuple(title_docs)
+                ids.update(title_docs)
             except:
                 pass
 
@@ -101,6 +105,7 @@ def get_docs():
                 publisher_docs = eval(docs_collect[0])[1]
                 # print("publisher ", publisher_docs)
                 term_documents['publisher_zone'] = tuple(publisher_docs)
+                ids.update(publisher_docs)
             except:
                 pass
 
@@ -111,6 +116,7 @@ def get_docs():
                 key_words_docs = eval(docs_collect[0])[1]
                 # print("key_words ", key_words_docs)
                 term_documents['key_word_zone'] = tuple(key_words_docs)
+                ids.update(key_words_docs)
             except:
                 pass
 
@@ -121,6 +127,7 @@ def get_docs():
                 isbn_docs = eval(docs_collect[0])[1]
                 # print("isbn ", isbn_docs)
                 term_documents['isbn_zone'] = tuple(isbn_docs)
+                ids.update(isbn_docs)
             except:
                 pass
 
@@ -130,14 +137,38 @@ def get_docs():
                 docs_collect = raw_docs_collections.collect()
                 category_docs = eval(docs_collect[0])[1]
                 # print("category ", category_docs)
-                term_documents['isbn_zone'] = tuple(isbn_docs)
-                term_documents.update(category_docs)
+                term_documents['category_zone'] = tuple(category_docs)
+                ids.update(category_docs)
             except:
                 pass
 
         # print("Term documents for %s\n %s" % (term, term_documents))
         query_term_docs[term] = term_documents
-    return query_term_docs
+        term_ids_mapping[term] = ids
+
+    terms_names_sorted = sorted(term_ids_mapping, key=lambda k: len(term_ids_mapping[k]))
+    for k in terms_names_sorted:
+        print(k, " ", len(term_ids_mapping[k]))
+    previous_computed_doc_ids = terms_names_sorted[0]
+    anded_result = set()
+    if len(terms_names_sorted) > 1:
+        for term in terms_names_sorted[1:]:
+            if len(term_ids_mapping[previous_computed_doc_ids]) <= len(term_ids_mapping[term]):
+                short = term_ids_mapping[previous_computed_doc_ids]
+                long = term_ids_mapping[term]
+            else:
+                long = term_ids_mapping[previous_computed_doc_ids]
+                short = term_ids_mapping[term]
+            short = sorted(short)
+            long = sorted(long)
+            for item_in_short in short:
+                if item_in_short in long:
+                    anded_result.add(item_in_short)
+            previous_computed_doc_ids = anded_result
+    else:
+        anded_result.update(term_ids_mapping[previous_computed_doc_ids])
+
+    return query_term_docs, anded_result
 
 
 def main():
@@ -146,29 +177,12 @@ def main():
     # k_docs = keyWords_zone.filter(lambda line: "algorithm" in line).collect()
     # print(k_docs)
 
-    docs_dict = get_docs()
+    query_term_docs, next_doc_ids = get_docs()
     weighted_docs_dict = defaultdict(int)
-    # terms_sorted = sorted(docs_dict, key=lambda doc_list_key: len(docs_dict[doc_list_key]))
-    # for k in terms_sorted:
-    #     print(k, " ", len(docs_dict[k]))
-    # previous_computed_doc_ids = terms_sorted[0]
-    # for term in terms_sorted[1:]:
-    #     next_doc_ids = set()
-    #     if len(docs_dict[previous_computed_doc_ids]) <= len(docs_dict[term]):
-    #         short = docs_dict[previous_computed_doc_ids]
-    #         long  = docs_dict[term]
-    #     else:
-    #         long = docs_dict[previous_computed_doc_ids]
-    #         short = docs_dict[term]
-    #     for item_in_short in short:
-    #         if item_in_short in long:
-    #             next_doc_ids.add(item_in_short)
-    #     previous_computed_doc_ids = next_doc_ids
-    # print(len(previous_computed_doc_ids))
-    # print(previous_computed_doc_ids)
-    # print(docs_dict)
-    for k, v in docs_dict.items():
-        for entity, doc_ids in v.items():
+
+    # for  in query_term_docs.values():
+    for term, zones in query_term_docs.items():
+        for entity, doc_ids in zones.items():
             for doc_id in doc_ids:
                 weighted_docs_dict[doc_id] += model_weightage[entity]*1
     ranking_key = sorted(weighted_docs_dict, key= lambda key: weighted_docs_dict[key])
