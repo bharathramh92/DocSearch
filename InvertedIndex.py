@@ -10,24 +10,25 @@ from nltk.stem.wordnet import WordNetLemmatizer
 os.environ['SPARK_HOME']="/home/bharath/spark-1.5.1"
 os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
 os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
-sc = SparkContext(appName="DataStructureDef")
+sc = SparkContext(appName="InvertedIndex")
 
 
 def main():
     # Total books 128326
     # Validated that all data have unique id. Therefore using id as the identifier for books.
-    # Ref. data_validation.py
+    # Ref. Collections.py
     # lemma for title_zone, category_zone, keyword_zone
-    data = sc.textFile("Resources/data_keywords")
+    data = sc.textFile("Resources/id_doc_rdd_raw")
 
     def author_zone_map_helper(line):
         entity = "authors"
         book = json.loads(line)
         authors_combinations_dict = {}
-        if entity in book:
-            for author in book[entity]:
-                for auth_split in re.findall(r"[a-zA-Z]+", author):
-                    authors_combinations_dict[auth_split.lower()] = [book["id"]]
+        for book_id, book_data in book.items():
+            if entity in book_data:
+                for author in book_data[entity]:
+                    for auth_split in re.findall(r"[a-zA-Z]+", author):
+                        authors_combinations_dict[auth_split.lower()] = [book_id]
         return tuple(authors_combinations_dict.items())
 
     def title_zone_map_helper(line):
@@ -35,20 +36,22 @@ def main():
         lemmatizer = WordNetLemmatizer()
         book = json.loads(line)
         title_combinations_dict = {}
-        if entity in book:
-            author = book[entity]
-            for title_split in re.findall(r"[a-zA-Z0-9]+", author):
-                title_combinations_dict[lemmatizer.lemmatize(title_split.lower())] = [book["id"]]
+        for book_id, book_data in book.items():
+            if entity in book_data:
+                author = book_data[entity]
+                for title_split in re.findall(r"[a-zA-Z0-9]+", author):
+                    title_combinations_dict[lemmatizer.lemmatize(title_split.lower())] = [book_id]
         return tuple(title_combinations_dict.items())
 
     def publisher_zone_map_helper(line):
         entity = "publisher"
         book = json.loads(line)
         publisher_combinations_dict = {}
-        if entity in book:
-            author = book[entity]
-            for auth_split in re.findall(r"[a-zA-Z0-9]+", author):
-                publisher_combinations_dict[auth_split.lower()] = [book["id"]]
+        for book_id, book_data in book.items():
+            if entity in book_data:
+                author = book_data[entity]
+                for auth_split in re.findall(r"[a-zA-Z0-9]+", author):
+                    publisher_combinations_dict[auth_split.lower()] = [book_id]
         return tuple(publisher_combinations_dict.items())
 
     def keyWords_zone_map_helper(line):
@@ -56,10 +59,11 @@ def main():
         lemmatizer = WordNetLemmatizer()
         book = json.loads(line)
         keyWord_combinations_dict = {}
-        if entity in book:
-            keyWords = book[entity]
-            for keyWord in keyWords:
-                keyWord_combinations_dict[lemmatizer.lemmatize(keyWord.lower())] = [book["id"]]
+        for book_id, book_data in book.items():
+            if entity in book_data:
+                keyWords = book_data[entity]
+                for keyWord in keyWords:
+                    keyWord_combinations_dict[lemmatizer.lemmatize(keyWord.lower())] = [book_id]
         return tuple(keyWord_combinations_dict.items())
 
     def isbn_zone_map_helper(line):
@@ -67,10 +71,11 @@ def main():
         isbn_combinations_dict = {}
         for entity in entities:
             book = json.loads(line)
-            if entity in book:
-                isbn = book[entity]
-                isbn = "".join(isbn.split("-"))         # Stripping off - in ISBN-13
-                isbn_combinations_dict[isbn.lower()] = [book["id"]]
+            for book_id, book_data in book.items():
+                if entity in book_data:
+                    isbn = book_data[entity]
+                    isbn = "".join(isbn.split("-"))         # Stripping off - in ISBN-13
+                    isbn_combinations_dict[isbn.lower()] = [book_id]
         return tuple(isbn_combinations_dict.items())
 
     def category_zone_map_helper(line):
@@ -78,10 +83,11 @@ def main():
         lemmatizer = WordNetLemmatizer()
         book = json.loads(line)
         category_combinations_dict = {}
-        if entity in book:
-            for category in book[entity]:
-                for cat_split in re.findall(r"[a-zA-Z0-9]+", category):
-                    category_combinations_dict[lemmatizer.lemmatize(cat_split.lower())] = [book["id"]]
+        for book_id, book_data in book.items():
+            if entity in book_data:
+                for category in book_data[entity]:
+                    for cat_split in re.findall(r"[a-zA-Z0-9]+", category):
+                        category_combinations_dict[lemmatizer.lemmatize(cat_split.lower())] = [book_id]
         return tuple(category_combinations_dict.items())
 
     author_zone = data.flatMap(author_zone_map_helper).reduceByKey(lambda x, y: x + y)
