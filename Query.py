@@ -179,7 +179,7 @@ def get_docs(query_term):
     return query_term_docs, anded_result
 
 
-def get_docs_zone(query_term):
+def get_docs_zone(query_term, zone_restriction):
     zone_rdd = sc.textFile("Resources/index_rdd")
     # To get restricted search results
     # Usage: If the search has to be restricted only to author and title, remaining 4 booleans should be False
@@ -234,10 +234,10 @@ def get_docs_zone(query_term):
 
     def raw_map_helper(line):
         line = eval(line)
-        print(line)
         return line[0] in term_combos
 
-    raw_docs_collections = zone_rdd.filter(lambda line: eval(line)[0] in term_combos)
+    # raw_docs_collections = zone_rdd.filter(lambda line: eval(line)[0] in term_combos)
+    raw_docs_collections = zone_rdd.filter(raw_map_helper)
     docs_collect = raw_docs_collections.collect()
     if len(docs_collect) > 0:
         for term_doc_zone in docs_collect:
@@ -245,11 +245,11 @@ def get_docs_zone(query_term):
             term = term_doc_zone[0]
             doc_zone = term_doc_zone[1]
             ids = set()
-            print(term)
             for doc, zone in doc_zone:
                 print(doc, ", ", zone)
-                ids.add(doc)
-                term_documents[doc].append(zone)
+                if zone in zone_restriction:
+                    ids.add(doc)
+                    term_documents[doc].append(zone)
             term_ids_mapping[term] = ids
             query_term_docs[term] = term_documents
                 # # print("author ", auth_docs)
@@ -404,7 +404,8 @@ def new_main():
     # q_term = 'algorithm cormen'
     q_term = "9781478427674"
     q_term = "978-1478427674"
-    query_term_docs, anded_result = get_docs_zone(q_term)
+    zone_restriction = ["ISBN_10"]
+    query_term_docs, anded_result = get_docs_zone(q_term, zone_restriction)
     weighted_docs_dict = defaultdict(int)
     doc_rank_data = defaultdict(list)
     for term, doc_zone in query_term_docs.items():
