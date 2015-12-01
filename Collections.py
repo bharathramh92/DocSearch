@@ -1,6 +1,7 @@
 import json
 
-def main():
+
+def check_id_presence():
     data, ids = [], set()
     with open("Resources/data_keywords", encoding="utf-8") as fl:
         for line in fl.readlines():
@@ -12,5 +13,6 @@ def main():
         print("All data have unique ids")
     else:
         print("All data doesn't have unique ids")
+
 if __name__ == '__main__':
-    main()
+    check_id_presence()
