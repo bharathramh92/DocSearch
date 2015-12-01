@@ -188,11 +188,24 @@ def get_docs_zone(query_term):
 
     query_term_docs, lemmatizer = {}, WordNetLemmatizer()
     term_ids_mapping = {}
-    term_combos = []
+    term_combos = set()
     for term in re.findall(r"([\w]+[\-]*[\w]+)", query_term):
         ##add lemma possibilities,with or without hiphen combos
-        term_combos.append(term)
+        if len(term.split("-")) > 1:
+            # hiphen present
+            for tm in re.findall(r"[a-zA-Z]+[\-]+[\w]+", term):
+                term_combos.add(tm)
+            if len(re.findall(r"[0-9]+[\-]+[\w]+", term)) > 0:
+                term_combos.add(''.join(term.split("-")))
+        else:
+            term_combos.add(term)
+    for term in term_combos:
+        lemma_term = lemmatizer.lemmatize(term)
+        term_combos.add(lemma_term)
+
+
     term_documents = defaultdict(list)
+    lemma_entities = ["title", "categories", "keyWords"]
     # ids = set()
     # term_lemma = lemmatizer.lemmatize(term.lower())   # Lemmatized term
     # Lemmatized term and term will have numbers. Hence no problem in taking any of those for number presence check.
@@ -220,10 +233,10 @@ def get_docs_zone(query_term):
         #     category_term = term_lemma    # lemmatized and can have numbers
 
     def raw_map_helper(line):
-        # line = eval(line)
-        # if len(line) > 0:
+        line = eval(line)
+        print(line)
+        return line[0] in term_combos
 
-        return eval(line)[0] in term_combos
     raw_docs_collections = zone_rdd.filter(lambda line: eval(line)[0] in term_combos)
     docs_collect = raw_docs_collections.collect()
     if len(docs_collect) > 0:
@@ -366,7 +379,7 @@ def get_docs_zone(query_term):
 
 
 def main():
-    query_term_docs, anded_result = get_docs('algorithm cormen')
+    query_term_docs, anded_result = get_docs('algorithm cormen 309428042938')
     weighted_docs_dict = defaultdict(int)
     doc_rank_data = defaultdict(list)
     for term, doc_zone in query_term_docs.items():
@@ -386,12 +399,15 @@ def main():
     print(read_docs(ranking_key, sc))
     sc.stop()
 
+
 def new_main():
-    query_term_docs, anded_result = get_docs_zone('algorithm cormen')
+    # q_term = 'algorithm cormen'
+    q_term = "9781478427674"
+    q_term = "978-1478427674"
+    query_term_docs, anded_result = get_docs_zone(q_term)
     weighted_docs_dict = defaultdict(int)
     doc_rank_data = defaultdict(list)
     for term, doc_zone in query_term_docs.items():
-        # for doc_id, zones in doc_zone.items():
         for doc_id in anded_result:
             for zone in doc_zone[doc_id]:
                 weighted_docs_dict[doc_id] += model_weightage[zone]*1
