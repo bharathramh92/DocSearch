@@ -90,18 +90,44 @@ def main():
                         category_combinations_dict[lemmatizer.lemmatize(cat_split.lower())] = [book_id]
         return tuple(category_combinations_dict.items())
 
-    author_zone = data.flatMap(author_zone_map_helper).reduceByKey(lambda x, y: x + y)
-    title_zone = data.flatMap(title_zone_map_helper).reduceByKey(lambda x, y: x + y)
-    publisher_zone = data.flatMap(publisher_zone_map_helper).reduceByKey(lambda x, y: x + y)
-    key_words_zone = data.flatMap(keyWords_zone_map_helper).reduceByKey(lambda x, y: x + y)
-    isbn_zone = data.flatMap(isbn_zone_map_helper).reduceByKey(lambda x, y: x + y)
-    category_zone = data.flatMap(category_zone_map_helper).reduceByKey(lambda x, y: x + y)
-    author_zone.saveAsTextFile("Resources/author_rdd")
-    title_zone.saveAsTextFile("Resources/title_rdd")
-    publisher_zone.saveAsTextFile("Resources/publisher_rdd")
-    key_words_zone.saveAsTextFile("Resources/keyWords_rdd")
-    isbn_zone.saveAsTextFile("Resources/isbn_rdd")
-    category_zone.saveAsTextFile("Resources/category_rdd")
+
+    def index_map_helper(line):
+        entities = ["ISBN_10", "ISBN_13", "categories", "authors", "title", "publisher", "keyWords"]
+        lemma_entities = ["title", "categories", "keyWords"]
+        lemmatizer = WordNetLemmatizer()
+        book = json.loads(line)
+        index = []
+        for entity in entities:
+            for book_id, book_data in book.items():
+                if entity in book_data:
+                    value_for_entity = book_data[entity]
+                    if isinstance(value_for_entity, str):
+                        value_for_entity = [value_for_entity]
+                    for term in value_for_entity:
+                        for term_split in re.findall(r"[a-zA-Z0-9\-]+", term):
+                            term_split = term_split.lower()
+                            if entity in lemma_entities:
+                                term_split = lemmatizer.lemmatize(term_split)
+                            index.append((term_split, ((book_id, entity), )))
+        return index
+
+
+    # author_zone = data.flatMap(author_zone_map_helper).reduceByKey(lambda x, y: x + y)
+    # title_zone = data.flatMap(title_zone_map_helper).reduceByKey(lambda x, y: x + y)
+    # publisher_zone = data.flatMap(publisher_zone_map_helper).reduceByKey(lambda x, y: x + y)
+    # key_words_zone = data.flatMap(keyWords_zone_map_helper).reduceByKey(lambda x, y: x + y)
+    # isbn_zone = data.flatMap(isbn_zone_map_helper).reduceByKey(lambda x, y: x + y)
+    # category_zone = data.flatMap(category_zone_map_helper).reduceByKey(lambda x, y: x + y)
+    # author_zone.saveAsTextFile("Resources/author_rdd")
+    # title_zone.saveAsTextFile("Resources/title_rdd")
+    # publisher_zone.saveAsTextFile("Resources/publisher_rdd")
+    # key_words_zone.saveAsTextFile("Resources/keyWords_rdd")
+    # isbn_zone.saveAsTextFile("Resources/isbn_rdd")
+    # category_zone.saveAsTextFile("Resources/category_rdd")
+
+    index_rdd = data.flatMap(index_map_helper).reduceByKey(lambda x, y: x + y)
+    index_rdd.saveAsTextFile("Resources/index_rdd")
+
     sc.stop()
 
 if __name__ == '__main__':
