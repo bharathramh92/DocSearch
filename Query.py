@@ -10,8 +10,10 @@ os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
 os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
 sc = SparkContext(appName="Query")
 
+# weightage definition dictionary
 model_weightage = {'ISBN_10': .3, 'ISBN_13': .3, 'authors': .18, 'publisher': .15, 'title': .15, 'categories': .12,
                    'keyWords': .1}
+# whole zone list
 zone_list = ['publisher', 'authors', 'categories', 'keyWords', 'ISBN_13', 'title', 'ISBN_10']
 
 
@@ -108,6 +110,7 @@ def get_docs(query_term=None, zone_restriction=None):
                 long = anded_result
                 short = term_ids_mapping[term]
             # pre sorting short and long lists makes the search faster
+            # total running time would be (s*log(s) + l*log(l)) + (s + l). s, l = len(short), len(long)
             short = sorted(short)
             long = sorted(long)
             long_index = 0
@@ -121,30 +124,32 @@ def get_docs(query_term=None, zone_restriction=None):
 
 
 def main():
-    q_term = 'algorithm big'
+    # q_term = 'human'
     # q_term = "9781478427674"
     # q_term = "978-1478427674"
+    zone_restriction = {"categories": 'music'}
+    # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
 
-    # zone_restriction = ["ISBN_10"]
-    zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
-
-    query_term_docs, anded_result = get_docs(q_term)
+    query_term_docs, anded_result = get_docs(zone_restriction= zone_restriction)
     weighted_docs_dict = defaultdict(int)
+    # doc_rank_data --> score split up for each document. eg: '1YT_AQAAQBAJ': [{'music': ['categories']}]
     doc_rank_data = defaultdict(list)
     for term, doc_zone in query_term_docs.items():
         for doc_id in anded_result:
             for zone in doc_zone[doc_id]:
+                # for each document, the weights are added using the model_weightage dictionary
                 weighted_docs_dict[doc_id] += model_weightage[zone]*1
             doc_rank_data[doc_id].append({term: doc_zone[doc_id]})
+    # ranking based on the weighted score
     ranking_key = sorted(weighted_docs_dict, key=lambda key: weighted_docs_dict[key], reverse=True)
-    print("result length: ", len(ranking_key))
-    ranked_score_list = []
+    print("Result Length: ", len(ranking_key))
+    ranked_score_list = []  # scores for each document
     for doc_id in ranking_key:
         ranked_score_list.append((doc_id, weighted_docs_dict[doc_id]))
 
     print(ranked_score_list)
     print(doc_rank_data)
-    print(read_docs(ranking_key, sc))
+    # print(read_docs(ranking_key, sc))
     sc.stop()
 
 if __name__ == '__main__':
