@@ -112,7 +112,7 @@ def get_docs(query_term=None, zone_restriction=None):
             long = sorted(long)
             long_index = 0
             for item_in_short in short:
-                for l_i in range(0, len(long)):
+                for l_i in range(long_index, len(long)):
                     if item_in_short == long[l_i]:
                         anded_result.add(item_in_short)
                     long_index += 1
@@ -137,7 +137,7 @@ def main():
                 weighted_docs_dict[doc_id] += model_weightage[zone]*1
             doc_rank_data[doc_id].append({term: doc_zone[doc_id]})
     ranking_key = sorted(weighted_docs_dict, key=lambda key: weighted_docs_dict[key], reverse=True)
-    print("ids", ranking_key)
+    print("result length: ", len(ranking_key))
     ranked_score_list = []
     for doc_id in ranking_key:
         ranked_score_list.append((doc_id, weighted_docs_dict[doc_id]))
