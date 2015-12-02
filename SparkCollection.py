@@ -34,7 +34,7 @@ def read_docs(id_list, sc):
         return list(line.keys())[0] in id_list
     doc_map = {}
     for dt in data_in.filter(filter_helper).collect():
-        for k,v in (json.loads(dt)).items():
+        for k, v in (json.loads(dt)).items():
             doc_map[k] = v
     sc.stop()
     return doc_map

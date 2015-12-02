@@ -4,7 +4,7 @@ from pyspark import SparkContext
 import json
 import re
 from nltk.stem.wordnet import WordNetLemmatizer
-
+from IndexConstants import ENTITIES, LEMMA_ENTITIES
 
 os.environ['SPARK_HOME']="/home/bharath/spark-1.5.1"
 os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
@@ -20,12 +20,10 @@ def main():
     data = sc.textFile("Resources/id_doc_rdd_raw")
 
     def index_map_helper(line):
-        entities = ["ISBN_10", "ISBN_13", "categories", "authors", "title", "publisher", "keyWords"]
-        lemma_entities = ["title", "categories", "keyWords"]
         lemmatizer = WordNetLemmatizer()
         book = json.loads(line)     # loads each book which were in a row of id_doc_rdd_raw
         index = []
-        for entity in entities:
+        for entity in ENTITIES:
             for book_id, book_data in book.items():     # book data key is doc id and value is the book data
                 if entity in book_data:                 # value is a dictionary with entity/zone mapping to its value
                     value_for_entity = book_data[entity]
@@ -34,14 +32,15 @@ def main():
                     for term in value_for_entity:               # each entity value is taken
                         for term_split in re.findall(r"[a-zA-Z0-9\-]+", term):  # multiple words are split and indexed
                             term_split = term_split.lower()     # eg: thomas h cormen --> into ['thomas', 'h', 'cormen']
-                            if entity in lemma_entities:
+                            if entity in LEMMA_ENTITIES:
                                 term_split = lemmatizer.lemmatize(term_split)   # lemmatizing if they have to be
                             index.append((term_split, ((book_id, entity), )))
         return index
 
     # flatmap is used since multiple key, value pairs are to be send out in map phase
     index_rdd = data.flatMap(index_map_helper).reduceByKey(lambda x, y: x + y)
-    index_rdd.saveAsTextFile("Resources/index_rdd")
+    # index_rdd.saveAsTextFile("Resources/index_rdd")
+    print(index_rdd.count())
     sc.stop()
 
 if __name__ == '__main__':

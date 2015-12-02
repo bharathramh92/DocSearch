@@ -5,14 +5,16 @@ import re
 from nltk.stem.wordnet import WordNetLemmatizer
 from collections import defaultdict
 from SparkCollection import read_docs
+from IndexConstants import MODEL_WEIGHTS, ENTITIES
+
 os.environ['SPARK_HOME'] = "/home/bharath/spark-1.5.1"
 os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
 os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
 sc = SparkContext(appName="Query")
 
 # weightage definition dictionary
-model_weightage = {'ISBN_10': .3, 'ISBN_13': .3, 'authors': .18, 'publisher': .15, 'title': .15, 'categories': .12,
-                   'keyWords': .1}
+# model_weightage = {'ISBN_10': .3, 'ISBN_13': .3, 'authors': .18, 'publisher': .15, 'title': .15, 'categories': .12,
+#                    'keyWords': .1}
 # whole zone list
 zone_list = ['publisher', 'authors', 'categories', 'keyWords', 'ISBN_13', 'title', 'ISBN_10']
 
@@ -37,7 +39,7 @@ def get_docs(query_term=None, zone_restriction=None):
     if zone_restriction is None:
         # normalizing the search term to dictionary format of zone_restriction
         zone_restriction = {}
-        for zn in zone_list:
+        for zn in ENTITIES:
             zone_restriction[zn] = query_term
     zone_restriction_added_terms = defaultdict(list)    # expand the zone_restriction to subset of the individual terms.
     for zone_res, q_term in zone_restriction.items():
@@ -137,8 +139,8 @@ def main():
     for term, doc_zone in query_term_docs.items():
         for doc_id in anded_result:
             for zone in doc_zone[doc_id]:
-                # for each document, the weights are added using the model_weightage dictionary
-                weighted_docs_dict[doc_id] += model_weightage[zone]*1
+                # for each document, the weights are added using the MODEL_WEIGHTS dictionary
+                weighted_docs_dict[doc_id] += MODEL_WEIGHTS[zone]*1
             doc_rank_data[doc_id].append({term: doc_zone[doc_id]})
     # ranking based on the weighted score
     ranking_key = sorted(weighted_docs_dict, key=lambda key: weighted_docs_dict[key], reverse=True)
@@ -149,7 +151,7 @@ def main():
 
     print(ranked_score_list)
     print(doc_rank_data)
-    # print(read_docs(ranking_key, sc))
+    print(read_docs(ranking_key, sc))
     sc.stop()
 
 if __name__ == '__main__':
