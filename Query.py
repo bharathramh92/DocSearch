@@ -5,18 +5,12 @@ import re
 from nltk.stem.wordnet import WordNetLemmatizer
 from collections import defaultdict
 from SparkCollection import read_docs
-from IndexConstants import MODEL_WEIGHTS, ENTITIES
+from IndexConstants import *
 
 os.environ['SPARK_HOME'] = "/home/bharath/spark-1.5.1"
 os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
 os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
 sc = SparkContext(appName="Query")
-
-# weightage definition dictionary
-# model_weightage = {'ISBN_10': .3, 'ISBN_13': .3, 'authors': .18, 'publisher': .15, 'title': .15, 'categories': .12,
-#                    'keyWords': .1}
-# whole zone list
-zone_list = ['publisher', 'authors', 'categories', 'keyWords', 'ISBN_13', 'title', 'ISBN_10']
 
 
 def get_docs(query_term=None, zone_restriction=None):
@@ -101,9 +95,12 @@ def get_docs(query_term=None, zone_restriction=None):
     print("Records for each search terms")
     for q_term_name in terms_names_sorted:
         print(q_term_name, " ", len(term_ids_mapping[q_term_name]))
+    # anded_result = set()
+    # next_item_to_compare = terms_names_sorted[0]
     anded_result = term_ids_mapping[terms_names_sorted[0]]  # storing the small sized result to anded_result
     if len(terms_names_sorted) > 1:
         for term in terms_names_sorted[1:]:
+            # next_item = term_ids_mapping[next_item_to_compare]
             if len(anded_result) <= len(term_ids_mapping[term]):
                 # term_ids_mapping[term] outputs a set of doc ids for "term"
                 short = anded_result
@@ -116,23 +113,33 @@ def get_docs(query_term=None, zone_restriction=None):
             short = sorted(short)
             long = sorted(long)
             long_index = 0
+            temp_set = set()
             for item_in_short in short:
                 for l_i in range(long_index, len(long)):
-                    if item_in_short == long[l_i]:
-                        anded_result.add(item_in_short)
-                    long_index += 1
+                    print(item_in_short, " ", long[l_i])
+                    if item_in_short <= long[l_i]:
+                        long_index = l_i
+                        if item_in_short == long[l_i]:
+                            temp_set.add(item_in_short)
+                        break
+            anded_result = temp_set
+            # Following commented code is a naive search with running time of s*l
+            # for item_in_short in short:
+            #     if item_in_short in long:
+            #         temp_set.add(item_in_short)
+            # anded_result = temp_set
 
     return query_term_docs, anded_result
 
 
 def main():
-    # q_term = 'human'
+    q_term = 'cormen algorithm thomas introduction createspace'
     # q_term = "9781478427674"
     # q_term = "978-1478427674"
-    zone_restriction = {"categories": 'music'}
+    # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
     # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
 
-    query_term_docs, anded_result = get_docs(zone_restriction= zone_restriction)
+    query_term_docs, anded_result = get_docs(query_term= q_term)
     weighted_docs_dict = defaultdict(int)
     # doc_rank_data --> score split up for each document. eg: '1YT_AQAAQBAJ': [{'music': ['categories']}]
     doc_rank_data = defaultdict(list)
@@ -151,7 +158,7 @@ def main():
 
     print(ranked_score_list)
     print(doc_rank_data)
-    print(read_docs(ranking_key, sc))
+    # print(read_docs(ranking_key, sc))
     sc.stop()
 
 if __name__ == '__main__':
