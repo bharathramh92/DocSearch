@@ -26,6 +26,7 @@ def get_docs(query_term=None, zone_restriction=None):
         exit(1)
 
     zone_rdd = sc.textFile("Resources/index_rdd")  # input rdd
+    views_rdd = sc.textFile("Resources/views_rdd")
     query_term_docs = {}   # in order to get weighted score, terms are mapped to a dictionary of doc id to zone mapping.
     lemmatizer = WordNetLemmatizer()
     term_ids_mapping = {}   # to map term with positive search result document ids
@@ -129,17 +130,24 @@ def get_docs(query_term=None, zone_restriction=None):
             #         temp_set.add(item_in_short)
             # anded_result = temp_set
 
-    return query_term_docs, anded_result
+    doc_views = views_rdd.takeOrdered(VIEW_RANKING_MAX_DOCS, key=lambda line: -eval(line)[1])
+    for i in range(0, len(doc_views)):
+        doc_views[i] = list(eval(doc_views[i]))
+        doc_views[i].append(i + 1)
+
+    return query_term_docs, anded_result, doc_views
 
 
 def main():
-    q_term = 'cormen algorithm thomas introduction createspace'
+    VIEW_RANKED_RETRIEVAL = True
+    q_term = 'cormen'
+    # q_term = 'clrs'
     # q_term = "9781478427674"
     # q_term = "978-1478427674"
     # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
     # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
 
-    query_term_docs, anded_result = get_docs(query_term= q_term)
+    query_term_docs, anded_result, doc_views = get_docs(query_term= q_term)
     weighted_docs_dict = defaultdict(int)
     # doc_rank_data --> score split up for each document. eg: '1YT_AQAAQBAJ': [{'music': ['categories']}]
     doc_rank_data = defaultdict(list)
@@ -149,8 +157,14 @@ def main():
                 # for each document, the weights are added using the MODEL_WEIGHTS dictionary
                 weighted_docs_dict[doc_id] += MODEL_WEIGHTS[zone]*1
             doc_rank_data[doc_id].append({term: doc_zone[doc_id]})
+    if VIEW_RANKED_RETRIEVAL:
+        for doc_view_record in doc_views:
+            doc, views, rank = doc_view_record
+            rank_reverse = VIEW_RANKING_MAX_DOCS - rank
+            weighted_docs_dict[doc_view_record[0]] += MODEL_WEIGHTS[VIEWS] * rank_reverse/VIEW_RANKING_MAX_DOCS
+            doc_rank_data[doc].append({VIEWS: rank})
     # ranking based on the weighted score
-    ranking_key = sorted(weighted_docs_dict, key=lambda key: weighted_docs_dict[key], reverse=True)
+    ranking_key = sorted(weighted_docs_dict, key=lambda ky: weighted_docs_dict[ky], reverse=True)
     print("Result Length: ", len(ranking_key))
     ranked_score_list = []  # scores for each document
     for doc_id in ranking_key:
@@ -158,7 +172,8 @@ def main():
 
     print(ranked_score_list)
     print(doc_rank_data)
-    # print(read_docs(ranking_key, sc))
+    doc_details = read_docs(ranking_key, sc)
+    # print(doc_details)
     sc.stop()
 
 if __name__ == '__main__':
