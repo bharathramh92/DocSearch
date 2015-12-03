@@ -15,7 +15,6 @@ sc = SparkContext(appName="Query")
 
 def get_docs(query_term=None, zone_restriction=None):
     """
-
     :param query_term: search term if it has to be searched across all the zones.
     :param zone_restriction: dictionary whose keys are zone and the corresponding value is the search term of that zone.
     :return:
@@ -117,7 +116,6 @@ def get_docs(query_term=None, zone_restriction=None):
             temp_set = set()
             for item_in_short in short:
                 for l_i in range(long_index, len(long)):
-                    print(item_in_short, " ", long[l_i])
                     if item_in_short <= long[l_i]:
                         long_index = l_i
                         if item_in_short == long[l_i]:
@@ -140,14 +138,14 @@ def get_docs(query_term=None, zone_restriction=None):
 
 def main():
     VIEW_RANKED_RETRIEVAL = True
-    q_term = 'cormen'
+    q_term = 'cormen clrs'
     # q_term = 'clrs'
     # q_term = "9781478427674"
     # q_term = "978-1478427674"
     # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
     # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
 
-    query_term_docs, anded_result, doc_views = get_docs(query_term= q_term)
+    query_term_docs, anded_result, doc_views = get_docs(query_term=q_term)
     weighted_docs_dict = defaultdict(int)
     # doc_rank_data --> score split up for each document. eg: '1YT_AQAAQBAJ': [{'music': ['categories']}]
     doc_rank_data = defaultdict(list)
