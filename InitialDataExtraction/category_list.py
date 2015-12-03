@@ -1,1 +1,1 @@
-category_list = ['Cormen']
+category_list = ['adam']

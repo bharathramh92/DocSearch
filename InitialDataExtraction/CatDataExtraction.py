@@ -1,7 +1,13 @@
 from bs4 import BeautifulSoup
 import httplib2
 
+
 def main():
+    """
+    Extracts category key words from goodreads.com.
+    eg: 'data_structure_algorithm', '10th-century'
+    :return:
+    """
     category_list = []
     h = httplib2.Http('.cache')
     websites = ["http://www.goodreads.com/genres/list?page=1", "http://www.goodreads.com/genres/list?page=2",

@@ -7,23 +7,30 @@ import time
 
 
 def main():
+    # Since google blocks our ip due excessive requests, data has to be retrieved on a sequential basis.
+    # This method generates a file in "input" directory for each search term
+    # Search term are to be provided in category_list.py as list
 
-    maxResults = 40
+    maxResults = 40     # 40 is the maximum number of records that could be extracted from google books api.
 
     google_api = "https://www.googleapis.com/books/v1/volumes"
     get_params = {'langRestrict': 'en', 'maxResults': maxResults, 'printType': 'books', 'orderBy': 'newest'}
 
     completed_items_set = set()
     output_list = []
-    retry_counter, retry_limit, retry_time_seconds = 0, 100, int(input("What should the retry interval be?\n"))
+
+    retry_counter, retry_limit, retry_time_seconds = 0, 100, \
+                                                     int(input("What should the retry interval be in seconds?\n"))
 
     try:
+        # completed_items_checklist has the list of ids of books whose data are downloaded
         with open("completed_items_checklist", mode='r', encoding='utf-8') as a_file:
             for line in a_file.readlines():
                 completed_items_set.add(line)
     except FileNotFoundError:
         pass
-    print("Total books retrieved so far %d" %(len(completed_items_set)))
+    print("Total books retrieved so far %d" % (len(completed_items_set)))
+
     def write_to_completed_items_checklist(data):
         with open("completed_items_checklist", mode='a', encoding='utf-8') as a_file:
             a_file.write(data + "\n")
@@ -39,9 +46,12 @@ def main():
         get_params['startIndex'] = startIndex
         response, content = h.request(google_api + "?" + urlencode(get_params))
         if response.status != 200:
+            # if google blocks our ip, the following message would be displayed
+            # userRateLimitExceededUnreg
             if "userRateLimitExceededUnreg" in str(content) and retry_counter < retry_limit:
                 retry_counter += 1
                 print("Waiting to get the hold lifted from Google")
+                # waiting for google to lift the hold
                 time.sleep(retry_time_seconds)
 
                 print("Retrying for the %d'%s time" %(retry_counter, num_char_dict[retry_counter % 10]))
@@ -50,7 +60,6 @@ def main():
                 print("Response to google api was %s.\nContent is %s" %(response, content))
                 return 1
         obj = json.loads(content.decode("utf-8"))
-        # print("Total items %d.\nCurrent retrieved contents %d" %(obj['totalItems'], len(obj['items'])))
         try:
             obj['items']
         except KeyError:
@@ -83,7 +92,6 @@ def main():
                         temp_item_dict[param] = item['volumeInfo'][param]
                     except KeyError as k:
                         pass
-                        # print("Couldn't find ", param)
 
                     if temp_item_dict.get('industryIdentifiers') is not None:
                         for identifier in temp_item_dict['industryIdentifiers']:
@@ -106,26 +114,6 @@ def main():
             a_file.write(out_data)
         completed_categories.append(category)
         print("Finished %.2f%%" % (100*len(completed_categories)/len(category_list)))
-    # index_counter = 0
-    # get_params['q'] = "algorithm"
-    # data = request_data(index_counter)
-    #
-    # while data is not None:
-    #     for item in data['items']:
-    #         temp_item_dict = {}
-    #         temp_item_dict['id'] = item['id']
-    #         for param in required_data:
-    #             try:
-    #                 temp_item_dict[param] = item['volumeInfo'][param]
-    #             except KeyError as k:
-    #                 print("could find " , param)
-    #         output_list.append(temp_item_dict)
-    #     index_counter += maxResults
-    #     print("Number of retrieved items %d" %len(output_list))
-    #     data = request_data(index_counter)
-    #     break
-
-    # print(output_list)
 
 if __name__ == '__main__':
     main()
