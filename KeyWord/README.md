@@ -1,5 +1,5 @@
 Project details
-- KeyWord sub project is retrieve keywords from description of books
+- KeyWord sub project is to extract keywords from description of books
 - Tried two approaches, Stanford Named Entity Recognition(NER) and Proper Noun extraction
 - Keywords from NER's found to be unreliable and Proper Nouns gave better results.
 - Issues with NER's were
