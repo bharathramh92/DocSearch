@@ -1,8 +1,5 @@
 import java.util.HashMap;
 
-/**
- * Created by bharath on 11/28/15.
- */
 public class Book {
     String description, title, ISBN_13, maturityRating, ISBN_10, id, pageCount, infoLink;
     String publisher;

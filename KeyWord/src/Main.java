@@ -14,15 +14,11 @@ public class Main {
         tagger = new MaxentTagger(getModeldir() + "taggers/english-left3words-distsim.tagger");
         Utils utils = new Utils(args[0]);
         HashMap<Integer, String> descriptions = utils.getDescriptions();
-//        int lastIndex = 100;
-//        if(descriptions.size() < 100)
         int lastIndex = descriptions.size();
 
         for(int i=0; i < lastIndex; i++){
             String[] keyWords = null;
             System.out.println("Completed "+ (float)i/lastIndex*100 + "%");
-//            String[] keyWords = stanfordNER(descriptions.get(i));
-//            Arrays.asList(keyWords).forEach(System.out::println);
             if(descriptions.containsKey(i)) {
                 keyWords = usingStanfordMaxentPOS(descriptions.get(i));
                 utils.updateKeyWords(keyWords, i);
