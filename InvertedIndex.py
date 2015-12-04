@@ -1,4 +1,3 @@
-#using spark
 import os
 from pyspark import SparkContext
 import json
@@ -6,9 +5,10 @@ import re
 from nltk.stem.wordnet import WordNetLemmatizer
 from IndexConstants import ENTITIES, LEMMA_ENTITIES
 
-os.environ['SPARK_HOME']="/home/bharath/spark-1.5.1"
-os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
-os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
+if 'uncc.edu' not in os.uname()[1]:
+    os.environ['SPARK_HOME']="/home/bharath/spark-1.5.1"
+    os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
+    os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
 sc = SparkContext(appName="InvertedIndex")
 
 
@@ -39,8 +39,8 @@ def main():
 
     # flatmap is used since multiple key, value pairs are to be send out in map phase
     index_rdd = data.flatMap(index_map_helper).reduceByKey(lambda x, y: x + y)
-    # index_rdd.saveAsTextFile("Resources/index_rdd")
-    print(index_rdd.count())
+    index_rdd.saveAsTextFile("Resources/index_rdd")
+    # print(index_rdd.count())
     sc.stop()
 
 if __name__ == '__main__':
