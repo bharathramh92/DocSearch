@@ -1,4 +1,3 @@
-#using spark
 import os
 from pyspark import SparkContext
 import re
@@ -6,10 +5,13 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from collections import defaultdict
 from SparkCollection import read_docs
 from IndexConstants import *
+import sys
 
-os.environ['SPARK_HOME'] = "/home/bharath/spark-1.5.1"
-os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
-os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
+if 'uncc.edu' not in os.uname()[1]:
+    # if the program is run on local machine, pyspark path needs to be defined.
+    os.environ['SPARK_HOME'] = "/home/bharath/spark-1.5.1"
+    os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
+    os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
 sc = SparkContext(appName="Query")
 
 
@@ -90,13 +92,16 @@ def get_docs(query_term=None, zone_restriction=None):
             query_term_docs[term] = term_documents
 
     # And operations for the term results
+    # Adding search term of the dictionary whose length is zero
+    for tm in term_combos:
+        if tm not in term_ids_mapping:
+            term_ids_mapping[tm] = set()
     # sort the query terms based on the result size
     terms_names_sorted = sorted(term_ids_mapping, key=lambda k: len(term_ids_mapping[k]))
     print("Records for each search terms")
     for q_term_name in terms_names_sorted:
         print(q_term_name, " ", len(term_ids_mapping[q_term_name]))
-    # anded_result = set()
-    # next_item_to_compare = terms_names_sorted[0]
+
     anded_result = term_ids_mapping[terms_names_sorted[0]]  # storing the small sized result to anded_result
     if len(terms_names_sorted) > 1:
         for term in terms_names_sorted[1:]:
@@ -128,7 +133,8 @@ def get_docs(query_term=None, zone_restriction=None):
             #         temp_set.add(item_in_short)
             # anded_result = temp_set
 
-    doc_views = views_rdd.takeOrdered(VIEW_RANKING_MAX_DOCS, key=lambda line: -eval(line)[1])
+    doc_views = views_rdd.filter(lambda line: eval(line)[0] in anded_result).\
+        takeOrdered(VIEW_RANKING_MAX_DOCS, key=lambda line: -eval(line)[1])
     for i in range(0, len(doc_views)):
         doc_views[i] = list(eval(doc_views[i]))
         doc_views[i].append(i + 1)
@@ -138,12 +144,17 @@ def get_docs(query_term=None, zone_restriction=None):
 
 def main():
     VIEW_RANKED_RETRIEVAL = True
-    q_term = 'cormen clrs'
-    # q_term = 'clrs'
-    # q_term = "9781478427674"
-    # q_term = "978-1478427674"
-    # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
-    # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
+    if len(sys.argv) > 1:
+        q_term = ' '.join(sys.argv[1:])
+    else:
+        q_term = 'cormen clrs'
+        # Following are examples about get_docs() usage
+        # q_term = 'clrs'
+        # q_term = "9781478427674"
+        # q_term = "978-1478427674"
+        # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
+        # zone_restriction = {KEYWORDS: 'pop'}
+        # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
 
     query_term_docs, anded_result, doc_views = get_docs(query_term=q_term)
     weighted_docs_dict = defaultdict(int)
@@ -171,7 +182,7 @@ def main():
     print(ranked_score_list)
     print(doc_rank_data)
     doc_details = read_docs(ranking_key, sc)
-    # print(doc_details)
+    print(doc_details)
     sc.stop()
 
 if __name__ == '__main__':
