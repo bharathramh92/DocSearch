@@ -1,3 +1,10 @@
+Sub projects (README of its project is inside their corresponding directory)
+- InitialDataExtraction(Data retrieval from Google Books API).
+- KeyWord(KeyWord generation using Stanford NLP)
+
+Indexing/Querying
+- Query.py and InvertedIndex.py are main files for indexing and querying.
+
 Resources requirement for indexing/querying
 - For indexing, Resource/id_doc_rdd_raw directory needs to be created in this path were README.md resides.
 - Raw data id_doc_rdd_raw which maps doc_id to document data would be the data structure.
