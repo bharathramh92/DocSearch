@@ -7,11 +7,14 @@ from IndexConstants import ENTITIES, LEMMA_ENTITIES
 
 if 'uncc.edu' not in os.uname()[1]:
     os.environ['SPARK_HOME']="/home/bharath/spark-1.5.1"
-    os.environ['PYSPARK_PYTHON'] = "/usr/bin/python3"
-    os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython3"
+    os.environ['PYSPARK_PYTHON'] = "/usr/bin/python"
+    os.environ['PYSPARK_DRIVER_PYTHON'] = "ipython"
 sc = SparkContext(appName="InvertedIndex")
 
-
+try:
+    basestring
+except NameError:
+    basestring = str
 def main():
     # Total books 128326
     # Validated that all data have unique id. Therefore using id as the identifier for books.
@@ -27,7 +30,8 @@ def main():
             for book_id, book_data in book.items():     # book data key is doc id and value is the book data
                 if entity in book_data:                 # value is a dictionary with entity/zone mapping to its value
                     value_for_entity = book_data[entity]
-                    if isinstance(value_for_entity, str):   # if the entity value is string, convert it to list
+                    if isinstance(value_for_entity, basestring):
+                        # if the entity value is string, convert it to list
                         value_for_entity = [value_for_entity]   # eg: "isbn":"123" --> "isbn" = ["123",]
                     for term in value_for_entity:               # each entity value is taken
                         for term_split in re.findall(r"[a-zA-Z0-9\-]+", term):  # multiple words are split and indexed
