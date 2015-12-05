@@ -184,9 +184,10 @@ def main():
     if VIEW_RANKED_RETRIEVAL:
         for doc_view_record in doc_views:
             doc, views, rank = doc_view_record
-            rank_reverse = VIEW_RANKING_MAX_DOCS - rank
+            rank_reverse = VIEW_RANKING_MAX_DOCS - rank + 1
             weighted_docs_dict[doc_view_record[0]] += MODEL_WEIGHTS[VIEWS] * rank_reverse/VIEW_RANKING_MAX_DOCS
             doc_rank_data[doc][VIEWS] = rank
+            print(rank)
     # ranking based on the weighted score
     ranking_key = sorted(weighted_docs_dict, key=lambda ky: weighted_docs_dict[ky], reverse=True)
     print("Result Length: ", len(ranking_key))
