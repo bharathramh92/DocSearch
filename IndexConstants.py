@@ -13,3 +13,7 @@ MODEL_WEIGHTS = {ISBN_10: .3, ISBN_13: .3, AUTHORS: .18, PUBLISHER: .15, TITLE: 
 
 
 VIEW_RANKING_MAX_DOCS = 20
+
+
+def best_zone(ls):
+    return sorted(ls, key=lambda zone: MODEL_WEIGHTS[zone], reverse=True)[0]

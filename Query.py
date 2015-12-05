@@ -2,6 +2,7 @@
 import os
 from pyspark import SparkContext
 import re
+import json
 from nltk.stem.wordnet import WordNetLemmatizer
 from collections import defaultdict
 from SparkCollection import read_docs
@@ -156,23 +157,36 @@ def main():
         # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
         # zone_restriction = {KEYWORDS: 'pop'}
         # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
+        zone_restriction = {AUTHORS: 'dan brown'}
 
     query_term_docs, anded_result, doc_views = get_docs(query_term=q_term)
     weighted_docs_dict = defaultdict(int)
     # doc_rank_data --> score split up for each document. eg: '1YT_AQAAQBAJ': [{'music': ['categories']}]
-    doc_rank_data = defaultdict(list)
+    doc_rank_data = defaultdict(dict)
+    # print(query_term_docs)
+
+    # Mapping document id with their a dictionary of term as key and value as the zones(list)
+    # eg: {'LqrvCQAAQBAJ': {'potter': ['title', 'keyWords'], 'phoenix': ['title', 'keyWords']},
+    # 'jHyfSQAACAAJ': {'potter': ['title', 'keyWords'], 'phoenix': ['keyWords'],}
     for term, doc_zone in query_term_docs.items():
         for doc_id in anded_result:
-            for zone in doc_zone[doc_id]:
-                # for each document, the weights are added using the MODEL_WEIGHTS dictionary
-                weighted_docs_dict[doc_id] += MODEL_WEIGHTS[zone]*1
-            doc_rank_data[doc_id].append({term: doc_zone[doc_id]})
+            doc_rank_data[doc_id][term] = doc_zone[doc_id]
+
+    for doc_id, term_zones in doc_rank_data.items():
+        for term, zones in term_zones.items():
+            # Adding the weight of the highly weighed zone.
+            # If a term, say harry is in title, author, and keywords, the highly weighed zone, in the current case,
+            # it is title. So that weight is taken as the weight for the term harry.
+            # Likewise all the term weights are added to get total score.
+            b_zone = best_zone(zones)
+            weighted_docs_dict[doc_id] += MODEL_WEIGHTS[b_zone]*1
+
     if VIEW_RANKED_RETRIEVAL:
         for doc_view_record in doc_views:
             doc, views, rank = doc_view_record
             rank_reverse = VIEW_RANKING_MAX_DOCS - rank
             weighted_docs_dict[doc_view_record[0]] += MODEL_WEIGHTS[VIEWS] * rank_reverse/VIEW_RANKING_MAX_DOCS
-            doc_rank_data[doc].append({VIEWS: rank})
+            doc_rank_data[doc][VIEWS] = rank
     # ranking based on the weighted score
     ranking_key = sorted(weighted_docs_dict, key=lambda ky: weighted_docs_dict[ky], reverse=True)
     print("Result Length: ", len(ranking_key))
@@ -183,7 +197,7 @@ def main():
     print(ranked_score_list)
     print(doc_rank_data)
     doc_details = read_docs(ranking_key, sc)
-    print(doc_details)
+    print(json.dumps(doc_details))
     sc.stop()
 
 if __name__ == '__main__':
