@@ -8,6 +8,7 @@ from collections import defaultdict
 from SparkCollection import read_docs
 from IndexConstants import *
 import sys
+import pprint
 
 if 'uncc.edu' not in os.uname()[1]:
     # if the program is run on local machine, pyspark path needs to be defined.
@@ -74,8 +75,8 @@ def get_docs(query_term=None, zone_restriction=None):
         term_lemma_dict_ref[lemma_term] = term
         temp_temp_combos.add(lemma_term)
     term_combos = temp_temp_combos
-    print(term_combos)
-    print(term_lemma_dict_ref)
+    print("Possible terms ", term_combos)
+    print("Lemma Mapping", term_lemma_dict_ref)
 
     # Performing data retrieval/filter using Spark
     # raw_docs_collections = zone_rdd.filter(lambda line: eval(line)[0] in term_combos)
@@ -106,7 +107,6 @@ def get_docs(query_term=None, zone_restriction=None):
             # update command will add new documents and the duplicate one's would have the same value be added.
             # Hence there wont be any problem while computing ranks
             query_term_docs[term_lemma_dict_ref[term]].update(term_documents)
-            print(len(query_term_docs[term_lemma_dict_ref[term]]))
     # And operations for the term results
     # Adding search term of the dictionary whose length is zero
     for tm in term_combos:
@@ -194,9 +194,10 @@ def get_ranking(q_term, z_restriction, VIEW_RANKED_RETRIEVAL):
     for doc_id in ranking_key:
         ranked_score_list.append((doc_id, weighted_docs_dict[doc_id]))
 
-    print(ranked_score_list)
-    print(doc_rank_data)
+    pprint.pprint(ranked_score_list)
+    pprint.pprint(doc_rank_data)
     doc_details = read_docs(ranking_key, sc)
+    print("Document data")
     print(json.dumps(doc_details))
     sc.stop()
 
