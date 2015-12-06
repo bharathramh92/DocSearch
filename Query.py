@@ -30,9 +30,9 @@ def get_docs(query_term=None, zone_restriction=None):
 
     zone_rdd = sc.textFile("Resources/index_rdd")  # input rdd
     views_rdd = sc.textFile("Resources/views_rdd")
-    query_term_docs = {}   # in order to get weighted score, terms are mapped to a dictionary of doc id to zone mapping.
+    query_term_docs = defaultdict(dict)   # in order to get weighted score, terms are mapped to a dictionary of doc id to zone mapping.
     lemmatizer = WordNetLemmatizer()
-    term_ids_mapping = {}   # to map term with positive search result document ids
+    term_ids_mapping = defaultdict(set)   # to map term with positive search result document ids
     term_combos = set()     # to store possible combinations of the search term
     if zone_restriction is None:
         # normalizing the search term to dictionary format of zone_restriction
@@ -42,6 +42,7 @@ def get_docs(query_term=None, zone_restriction=None):
     zone_restriction_added_terms = defaultdict(list)    # expand the zone_restriction to subset of the individual terms.
     for zone_res, q_term in zone_restriction.items():
         for term in re.findall(r"([\w]+[\-]*[\w]+)", q_term):
+            term = term.lower()
             # Getting individual words from the given search term
             if len(term.split("-")) > 1:
                 if len(re.findall(r"[a-zA-Z]+[\-]+[\w]+", term)) > 0:
@@ -50,22 +51,31 @@ def get_docs(query_term=None, zone_restriction=None):
                     for tm in term.split("-"):
                         term_combos.add(tm)
                         zone_restriction_added_terms[zone_res].append(tm)
+                        zone_restriction_added_terms[zone_res].append(lemmatizer.lemmatize(tm))
                 if len(re.findall(r"[0-9]+[\-]+[\w]+", term)) > 0:
                     # if the term is a number and has a hiphen, concatenate the term. Mainly for isbn check
                     # eg: ‎978-3-16-148410-0 is transformed into 9783161484100
                     combined_term = ''.join(term.split("-"))
                     term_combos.add(combined_term)
                     zone_restriction_added_terms[zone_res].append(combined_term)
+                    zone_restriction_added_terms[zone_res].append(lemmatizer.lemmatize(tm))
             else:
                 # if hiphen is not present in a term, add directly
                 term_combos.add(term)
                 zone_restriction_added_terms[zone_res].append(term)
+                zone_restriction_added_terms[zone_res].append(lemmatizer.lemmatize(term))
+    temp_temp_combos = set()
+    term_lemma_dict_ref = {}    # lemma_word to original word mapping
     for term in term_combos:
         # add lemma possibilities as well in the search group
+        temp_temp_combos.add(term)
         lemma_term = lemmatizer.lemmatize(term)
-        term_combos.add(lemma_term)
-
+        term_lemma_dict_ref[term] = term
+        term_lemma_dict_ref[lemma_term] = term
+        temp_temp_combos.add(lemma_term)
+    term_combos = temp_temp_combos
     print(term_combos)
+    print(term_lemma_dict_ref)
 
     # Performing data retrieval/filter using Spark
     # raw_docs_collections = zone_rdd.filter(lambda line: eval(line)[0] in term_combos)
@@ -75,7 +85,7 @@ def get_docs(query_term=None, zone_restriction=None):
         return line[0] in term_combos
     raw_docs_collections = zone_rdd.filter(raw_map_helper)
     docs_collect = raw_docs_collections.collect()   # list of documents from search query
-
+    print(len(docs_collect))
     # Changing data format of the queried data
     if len(docs_collect) > 0:
         for term_doc_zone in docs_collect:
@@ -90,13 +100,18 @@ def get_docs(query_term=None, zone_restriction=None):
                     # save the result only if the data corresponds to the given zone
                     ids.add(doc)
                     term_documents[doc].append(zone)
-            term_ids_mapping[term] = ids
-            query_term_docs[term] = term_documents
-
+            # print(term, " ", len(ids))
+            term_ids_mapping[term_lemma_dict_ref[term]].update(ids)
+            # If the search term was cats, the term doc_collect would have two terms, cat and cats because of
+            # lemmatization. If the query_term_docs is updated with key cat first, now cats would come second.
+            # update command will add new documents and the duplicate one's would have the same value be added.
+            # Hence there wont be any problem while computing ranks
+            query_term_docs[term_lemma_dict_ref[term]].update(term_documents)
+            print(len(query_term_docs[term_lemma_dict_ref[term]]))
     # And operations for the term results
     # Adding search term of the dictionary whose length is zero
     for tm in term_combos:
-        if tm not in term_ids_mapping:
+        if tm not in term_ids_mapping and term_lemma_dict_ref[tm] not in term_ids_mapping:
             term_ids_mapping[tm] = set()
     # sort the query terms based on the result size
     terms_names_sorted = sorted(term_ids_mapping, key=lambda k: len(term_ids_mapping[k]))
@@ -157,7 +172,7 @@ def get_ranking(q_term, z_restriction, VIEW_RANKED_RETRIEVAL):
     for term, doc_zone in query_term_docs.items():
         for doc_id in anded_result:
             doc_rank_data[doc_id][term] = doc_zone[doc_id]
-
+    # print(doc_rank_data)
     for doc_id, term_zones in doc_rank_data.items():
         for term, zones in term_zones.items():
             # Adding the weight of the highly weighed zone.
@@ -200,5 +215,5 @@ if __name__ == '__main__':
         # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
         # zone_restriction = {KEYWORDS: 'pop'}
         # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
-        zon_restriction = {AUTHORS: 'dan brown'}
+        zon_restriction = {TITLE: 'great expectations'}
     get_ranking(q__term, zon_restriction, VIEW_RANKED_RETRIEVAL=VIEW_RANKED_RETRIEVAL)
