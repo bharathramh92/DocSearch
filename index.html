@@ -120,33 +120,25 @@ Each record has meta data for a book in json format and following are the entiti
     MODEL_WEIGHTS = {ISBN_10: .3, ISBN_13: .3, AUTHORS: .18, PUBLISHER: .15, TITLE: .15, CATEGORIES: .12,
     KEYWORDS: .1, VIEWS: .5}
 </code></p>
-<p>Above weights are formulated by basic logic.</p>
+<p>Above weights are formulated after lot of query search experiments and intuitions.</p>
+<p>View counts are generated for only select few documents.</p>
 <p>Output of this phase is a list of tuple of document_id and score in sorted order.</p>
-<h4>Following outputs show the ranking with view weight exclude and include.</h4>
 
-<p>Without Ranking based on View Count</p>
-<code>[('unDKrQEACAAJ', 0.45999999999999996), ('COxdlgEACAAJ', 0.32999999999999996), ('EUrXoAEACAAJ', 0.28), ('r-oGPLclJc0C', 0.28), ('aefUBQAAQBAJ', 0.18), ('g8d3PwAACAAJ', 0.18), ('z73loAEACAAJ', 0.18), ('i-bUBQAAQBAJ', 0.18), ('jUF9BAAAQBAJ', 0.18), ('7cNgPwAACAAJ', 0.18), ('U2P3NwAACAAJ', 0.18), ('dEplHQAACAAJ', 0.18), ('YsE2pwAACAAJ', 0.18), ('NLngYyWFl_YC', 0.18), ('F3anBQAAQBAJ', 0.18), ('eW84rgEACAAJ', 0.18), ('h2xRPgAACAAJ', 0.18), ('46JvnQEACAAJ', 0.18), ('m2QwnwEACAAJ', 0.18), ('JtlDAAAACAAJ', 0.18), ('Jwr8jwEACAAJ', 0.18), ('NdSXoAEACAAJ', 0.18), ('AGAiAgAAQBAJ', 0.15), ('yfnloQEACAAJ', 0.1), ('3QU2SgAACAAJ', 0.1), ('pUGYSQAACAAJ', 0.1), ('Ew--ngEACAAJ', 0.1), ('5kmsSgAACAAJ', 0.1), ('0hX5ygAACAAJ', 0.1), ('ZLN9CQAAQBAJ', 0.1), ('HbxILgEACAAJ', 0.1), ('nunPngEACAAJ', 0.1), ('Zl-lcQAACAAJ', 0.1), ('he2koAEACAAJ', 0.1), ('mmFGSwAACAAJ', 0.1)]</code>
 
-<p>With Ranking based on View Count</p>
-<code>[('i-bUBQAAQBAJ', 0.655), ('unDKrQEACAAJ', 0.585), ('h2xRPgAACAAJ', 0.5800000000000001), ('r-oGPLclJc0C', 0.555), ('g8d3PwAACAAJ', 0.5549999999999999), ('pUGYSQAACAAJ', 0.55), ('z73loAEACAAJ', 0.53), ('5kmsSgAACAAJ', 0.525), ('aefUBQAAQBAJ', 0.505), ('jUF9BAAAQBAJ', 0.48), ('46JvnQEACAAJ', 0.43), ('COxdlgEACAAJ', 0.32999999999999996), ('Ew--ngEACAAJ', 0.325), ('ZLN9CQAAQBAJ', 0.30000000000000004), ('EUrXoAEACAAJ', 0.28), ('U2P3NwAACAAJ', 0.28), ('HbxILgEACAAJ', 0.275), ('YsE2pwAACAAJ', 0.255), ('yfnloQEACAAJ', 0.25), ('JtlDAAAACAAJ', 0.22999999999999998), ('NdSXoAEACAAJ', 0.18), ('Jwr8jwEACAAJ', 0.18), ('F3anBQAAQBAJ', 0.18), ('NLngYyWFl_YC', 0.18), ('dEplHQAACAAJ', 0.18), ('7cNgPwAACAAJ', 0.18), ('m2QwnwEACAAJ', 0.18), ('eW84rgEACAAJ', 0.18), ('AGAiAgAAQBAJ', 0.15), ('he2koAEACAAJ', 0.125), ('mmFGSwAACAAJ', 0.1), ('Zl-lcQAACAAJ', 0.1), ('3QU2SgAACAAJ', 0.1), ('0hX5ygAACAAJ', 0.1), ('nunPngEACAAJ', 0.1)]</code>
-
-<h4>Brief walk through about filter phase</h4>
+<h4>Brief walk through about filter phase after Querying</h4>
 <ul>
     <li>Each query term is separated by whitespace</li>
-    <li>One's with hiphen are taken as a special case. If the splits for this case are numbers, hiphen
-    is removed and combined together. If the splits are alphanumeric, each split is taken separately</li>
-    <li>Lemma for each term is taken as well in search list</li>
-    <li>Basic filter method where a term is there in a line or not is performed.
-        From this output, document list for each term is mapped.</li>
-    <li>Using the key:documents map, "and" operation is performed between all terms</li>
-    <li>From the AND result, view count for those documents are taken and ranked</li>
-    <li>For each term, maximum weighed zone is taken for the document while calculating rank scores.
-    eg: For a document, if the term algorithm is present in title and keyword, from our model,
-        title is most valued term. Hence for that document, and the term algorithm, title's zone weight
-        is taken. </li>
-    <li>Sum of the weights for all the terms in a document is computed.</li>
-    <li>Sorting of above result in descending order gives final rank</li>
+    <li>Query term with hiphen are taken as a special case. If the splits(at hiphen, eg: 930-123) for this case are numbers, hiphen
+    is removed and combined together(930-123 becomes 930123). If the splits are alphanumeric(abc-xyz), each split is taken separately(abc-xyz becomes 'abc' and 'xyz')</li>
+    <li>Lemmatization for each term is done as well in search list</li>
+    <li>AND operation is performed between all query terms and the results obtained after AND operation is searched through inverted indices. </li>
+    <li>View count for the documents obtained from inverted index data is also considered.</li>
+    <li>A final ranking is done for these documents based on the weights for each query term and view count.</li>
+    <li>Sorting of above result in descending order gives the final serach outputs.</li>
 
 </ul>
+
+<h2 id="query_gen">Results</h2>
+<p>Mini search engine was implemented successfully. </p>
 </body>
 </html>
