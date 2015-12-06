@@ -144,22 +144,8 @@ def get_docs(query_term=None, zone_restriction=None):
     return query_term_docs, anded_result, doc_views
 
 
-def main():
-    VIEW_RANKED_RETRIEVAL = True
-    if len(sys.argv) > 1:
-        q_term = ' '.join(sys.argv[1:])
-    else:
-        q_term = 'cormen clrs'
-        # Following are examples about get_docs() usage
-        # q_term = 'clrs'
-        # q_term = "9781478427674"
-        # q_term = "978-1478427674"
-        # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
-        # zone_restriction = {KEYWORDS: 'pop'}
-        # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
-        zone_restriction = {AUTHORS: 'dan brown'}
-
-    query_term_docs, anded_result, doc_views = get_docs(query_term=q_term)
+def get_ranking(q_term, z_restriction, VIEW_RANKED_RETRIEVAL):
+    query_term_docs, anded_result, doc_views = get_docs(query_term=q_term, zone_restriction=z_restriction)
     weighted_docs_dict = defaultdict(int)
     # doc_rank_data --> score split up for each document. eg: '1YT_AQAAQBAJ': [{'music': ['categories']}]
     doc_rank_data = defaultdict(dict)
@@ -201,4 +187,18 @@ def main():
     sc.stop()
 
 if __name__ == '__main__':
-    main()
+    q__term, zon_restriction = None, None
+    VIEW_RANKED_RETRIEVAL = True
+    if len(sys.argv) > 1:
+        q__term = ' '.join(sys.argv[1:])
+    else:
+        # q_term = 'cormen clrs'
+        # Following are examples about get_docs() usage
+        # q_term = 'clrs'
+        # q_term = "9781478427674"
+        # q_term = "978-1478427674"
+        # zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
+        # zone_restriction = {KEYWORDS: 'pop'}
+        # zone_restriction = {'title': 'cormen algorithm', 'ISBN_10': '1478427671'}
+        zon_restriction = {AUTHORS: 'dan brown'}
+    get_ranking(q__term, zon_restriction, VIEW_RANKED_RETRIEVAL=VIEW_RANKED_RETRIEVAL)
