@@ -44,6 +44,7 @@ Dependencies for this project
 
 Instructions for testing the code with sample data.
 - Copy the files in a directory of cluster
-- Copy the resources from given link. 
+- Copy the "Resources" directory from given link and put it in hadoop fs home.
+- Then, Your hadoop fs should have a directory name "Resources"
 - https://drive.google.com/a/uncc.edu/folderview?id=0B9gSr_XpY1b0VVdQVHZPb2RnU3M&usp=sharing
 - Note that, index_rdd can be avoided if planning to perform indexing operation (InvertedIndex.py)
