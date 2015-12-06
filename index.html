@@ -18,7 +18,9 @@ is of books. For more information on how the meta data for the books should be c
     <a href="http://www.thebookdesigner.com/2012/05/self-publishing-basics-introduction-to-metadata/">refer
         this link</a></p>
 <h4 id="dataset">Data-set</h4>
-Each record has meta data for a book in json format and following are the entities.
+<p>We are using book's meta data for this project. We have crawled 127926 book’s data from Google
+    books API. Size of dataset is approximately 200MB.</p>
+<p>Each record has meta data for a book in json format and following are the entities.</p>
 <ul>
     <li><b>Title</b> Title of the book</li>
     <li><b>Authors</b> List of Authors for the book  </li>
@@ -34,7 +36,38 @@ Each record has meta data for a book in json format and following are the entiti
 
 <p id="views_rdd">Additionally, view count for each record is provided separately.</p>
 <p>Sample view data format: <code>('NLngYyWFl_YC', 1292215)</code></p>
-<p></p>
+<h4>Motivation</h4>
+<p>Most of the websites which we use (For example, Snapdeal) are not giving accurate results as user wants.
+    Hence, we felt this would be an interesting and useful project to work upon.</p>
+<h4>Algorithm/Framework</h4>
+<ul>
+    <li>Algorithm - Inverted index</li>
+    <li>Framework - Spark</li>
+</ul>
+<h4>External tools used</h4>
+<ul>
+   <li>nltk for language processing</li>
+    <li>wordnet corpora for lemmatization</li>
+</ul>
+<h4>Deliverables</h4>
+<p>What we will definitely accomplish:</p>
+<p>We would definitely complete the basic search engine part which makes use of
+    indexing and query retrieval based on relevance using Map Reduce paradigm. This is completed.</p>
+<br/>
+<p>What we are likely to accomplish:</p>
+<p>We would like to improve the search accuracy after seeing results from step 1 as our next step.
+Used view ranking for this purpose and had achieved this. This is completed.</p>
+<br/>
+<p>What we would ideally like to accomplish:</p>
+<p>We would plan on adding suggestions and autocorrect features, if time permits, or keep those as
+    future steps. This step is time consuming can be taken be taken as future work. This is not completed.</p>
+<h4>Work division</h4>
+<p>Midhun</p>
+<p>Data crawling, Data cleaning, KeyWord generation</p>
+
+<br/>
+<p>Bharath</p>
+<p>Indexing, Querying</p>
 <h1>Project flow</h1>
 <ul>
     <li><a href="#data_extraction">Data extraction</a></li>
