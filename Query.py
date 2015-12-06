@@ -85,7 +85,6 @@ def get_docs(query_term=None, zone_restriction=None):
         return line[0] in term_combos
     raw_docs_collections = zone_rdd.filter(raw_map_helper)
     docs_collect = raw_docs_collections.collect()   # list of documents from search query
-    print(len(docs_collect))
     # Changing data format of the queried data
     if len(docs_collect) > 0:
         for term_doc_zone in docs_collect:
