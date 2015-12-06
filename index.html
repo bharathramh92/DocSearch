@@ -7,41 +7,41 @@
 <body>
 <h1>Introduction</h1>
 <p>This project is a demonstration of creating an internal search engine solely based on cloud computing
-    tools and techniques. We have used Spark for big data processing.</p>
+    tools and techniques. We have used Spark for big data processing. This project is intended for generic
+    data and data definition is defined by constants and hence this project could be reused for any type
+    of data. <a href="http://startupbros.com/rank-amazon/">This Article</a> gives us an insight about how
+    the Amazon search algorithm could be.</p>
 <h4>Objective</h4>
 <p>Perform data/item retrieval for e-commerce data set from their meta data. For this project, the data set
-is of books.</p>
+is of books. For more information on how the meta data for the books should be chosen,
+    <a href="http://www.thebookdesigner.com/2012/05/self-publishing-basics-introduction-to-metadata/">refer
+        this link</a></p>
 <h4 id="dataset">Data-set</h4>
 Each record has meta data for a book in json format and following are the entities.
 <ul>
-    <li>Title</li>
-    <li>Authors</li>
-    <li>Publishers</li>
-    <li>Description</li>
-    <li>Categories</li>
-    <li>ISBN_10</li>
-    <li>ISBN_13</li>
+    <li><b>Title</b> Title of the book</li>
+    <li><b>Authors</b> List of Authors for the book  </li>
+    <li><b>Publishers</b> Book Publisher  </li>
+    <li><b>Description</b> Book Description </li>
+    <li><b>Categories</b> List of Categories/Sub-Categories </li>
+    <li><b>ISBN_10</b>  </li>
+    <li><b>ISBN_13</b>   </li>
+    <li><b>KeyWords</b> Special terms people search for finding this book </li>
 </ul>
 <p>Sample format for a book record</p>
-<p><code>{"uKQ0CgAAQBAJ": {"imageLinks": {"smallThumbnail": "http://books.google.com/books/content?id=uKQ0CgAAQBAJ&printsec=frontcover&img=1&zoom=5&edge=curl&so
-urce=gbs_api", "thumbnail": "http://books.google.com/books/content?id=uKQ0CgAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"}, "catego
-ries": ["Fiction"], "description": "Meredith has never considered herself submissive even though her greatest fantasy is being pleasured against her wi
-ll. When Mark orders her to her knees the first time, she can\u2019t get there fast enough\u2014and then hates herself afterward for losing control. A"
-, "publisher": "Ellora's Cave Publishing Inc", "ISBN_13": "9781419994289", "keyWords": ["Meredith", "Mark"], "infoLink": "http://books.google.com/books
-?id=uKQ0CgAAQBAJ&dq=go&as_pt=BOOKS&hl=&source=gbs_api", "authors": ["L.E. Chamberlin"], "ISBN_10": "141999428X", "maturityRating": "NOT_MATURE", "title
-": "The Rewards of Letting Go"}}</code></p>
+<p><code>{"uKQ0CgAAQBAJ": {"imageLinks": {"smallThumbnail": "http://books.google.com/books/content?id=uKQ0CgAAQBAJ&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api", "thumbnail": "http://books.google.com/books/content?id=uKQ0CgAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"}, "categories": ["Fiction"], "description": "Meredith has never considered herself submissive even though her greatest fantasy is being pleasured against her will. When Mark orders her to her knees the first time, she can\u2019t get there fast enough\u2014and then hates herself afterward for losing control. A", "publisher": "Ellora's Cave Publishing Inc", "ISBN_13": "9781419994289", "keyWords": ["Meredith", "Mark"], "infoLink": "http://books.google.com/books?id=uKQ0CgAAQBAJ&dq=go&as_pt=BOOKS&hl=&source=gbs_api", "authors": ["L.E. Chamberlin"], "ISBN_10": "141999428X", "maturityRating": "NOT_MATURE", "title": "The Rewards of Letting Go"}}</code></p>
 
 <p id="views_rdd">Additionally, view count for each record is provided separately.</p>
 <p>Sample view data format: <code>('NLngYyWFl_YC', 1292215)</code></p>
 <p></p>
 <h1>Project flow</h1>
 <ul>
-    <li>Data extraction</li>
-    <li>Keywords generation</li>
-    <li>Indexing</li>
-    <li>Querying</li>
+    <li><a href="#data_extraction">Data extraction</a></li>
+    <li><a href="#key_gen">Keywords generation</a></li>
+    <li><a href="#index_gen">Indexing</a></li>
+    <li><a href="#query_gen">Querying</a></li>
 </ul>
-<h3>Data Extraction</h3>
+<h2 id="data_extraction">Data Extraction</h2>
 <p>
     Google books api was used to get the book details. For making query in google books api, search terms are to
     be provided. Search terms we took was the category names. This category name was crawled from goodreads.com
@@ -69,7 +69,7 @@ ll. When Mark orders her to her knees the first time, she can\u2019t get there f
     </li>
 </ul>
 
-<h3>Keywords generation</h3>
+<h2 id="key_gen">Keywords generation</h2>
 
 <p>KeyWord sub project was to retrieve keywords from description of the books.</p>
 <p>Tried two approaches</p>
@@ -84,20 +84,32 @@ ll. When Mark orders her to her knees the first time, she can\u2019t get there f
 </p>
 
 <p>Json data manipulation was performed using gson library</p>
-<p>Input to this method was the data retrieved from google api./p>
+<p>Input to this method was the data retrieved from google api.</p>
 <p>Output is an added entity called keyWords in book record.</p>
 
 <br/>
-<h3>Indexing</h3>
-<p>This method generates an inverted index for each book record and are stored in index_rdd.</p>
-<p>Input for this method is id_doc_rdd_raw and the data format is mentioned <a href="#dataset">above</a>.</p>
+<h2 id="index_gen">Indexing</h2>
+<p>This method generates an inverted index for each book record and are stored in index_rdd map.</p>
+<p>Input for this method is referenced by id_doc_rdd_raw and its data format is as mentioned <a href="#dataset">above</a>.</p>
 <p>index_rdd map has indexed term mapped to corresponding document id along with the zone/entity name</p>
 <p>Following is an example.</p>
 <p id="index_rdd"><code>('aceline', (('K3NLoAEACAAJ', 'keyWords'), ('7DiNBwAAQBAJ', 'title')))</code></p>
 <p>'aceline' is the indexed term, K3NLoAEACAAJ is the doc_id, keyWords was the zone and likewise.</p>
-
+<h4>Brief walk through about Map Reduce in this phase</h4>
+<ul> <h4>Map Phase</h4>
+    <li>JSON data is converted to python data object </li>
+    <li>Keys are entities/zones, and value is their corresponding value in string of list format</li>
+    <li>All string values are converted to list</li>
+    <li>Lemmatized term for certain entities are taken for some of the entities as defined
+        in the IndexConstants.LEMMA_ENTITIES constant. </li>
+    <li>Using flatMap, term is mapped to a tuple of document id and entity/zone name</li>
+    <h4>Reduce Phase</h4>
+    <li>This is a reduce by key phase</li>
+    <li>Addition of tuples of values(tuple of document id and entity/zone name) from map phase appended together
+        for a key(term)</li>
+</ul>
 <br/>
-<h3>Querying</h3>
+<h2 id="query_gen">Querying</h2>
 <p>Each entity needs to have different weights. If 2 documents have the search term present in title and keyWords
     respectively, we have to give more priority to the document whose title matched.
     Likewise, more visited document has to be given higher priority.</p>
@@ -118,5 +130,23 @@ ll. When Mark orders her to her knees the first time, she can\u2019t get there f
 <p>With Ranking based on View Count</p>
 <code>[('i-bUBQAAQBAJ', 0.655), ('unDKrQEACAAJ', 0.585), ('h2xRPgAACAAJ', 0.5800000000000001), ('r-oGPLclJc0C', 0.555), ('g8d3PwAACAAJ', 0.5549999999999999), ('pUGYSQAACAAJ', 0.55), ('z73loAEACAAJ', 0.53), ('5kmsSgAACAAJ', 0.525), ('aefUBQAAQBAJ', 0.505), ('jUF9BAAAQBAJ', 0.48), ('46JvnQEACAAJ', 0.43), ('COxdlgEACAAJ', 0.32999999999999996), ('Ew--ngEACAAJ', 0.325), ('ZLN9CQAAQBAJ', 0.30000000000000004), ('EUrXoAEACAAJ', 0.28), ('U2P3NwAACAAJ', 0.28), ('HbxILgEACAAJ', 0.275), ('YsE2pwAACAAJ', 0.255), ('yfnloQEACAAJ', 0.25), ('JtlDAAAACAAJ', 0.22999999999999998), ('NdSXoAEACAAJ', 0.18), ('Jwr8jwEACAAJ', 0.18), ('F3anBQAAQBAJ', 0.18), ('NLngYyWFl_YC', 0.18), ('dEplHQAACAAJ', 0.18), ('7cNgPwAACAAJ', 0.18), ('m2QwnwEACAAJ', 0.18), ('eW84rgEACAAJ', 0.18), ('AGAiAgAAQBAJ', 0.15), ('he2koAEACAAJ', 0.125), ('mmFGSwAACAAJ', 0.1), ('Zl-lcQAACAAJ', 0.1), ('3QU2SgAACAAJ', 0.1), ('0hX5ygAACAAJ', 0.1), ('nunPngEACAAJ', 0.1)]</code>
 
+<h4>Brief walk through about filter phase</h4>
+<ul>
+    <li>Each query term is separated by whitespace</li>
+    <li>One's with hiphen are taken as a special case. If the splits for this case are numbers, hiphen
+    is removed and combined together. If the splits are alphanumeric, each split is taken separately</li>
+    <li>Lemma for each term is taken as well in search list</li>
+    <li>Basic filter method where a term is there in a line or not is performed.
+        From this output, document list for each term is mapped.</li>
+    <li>Using the key:documents map, "and" operation is performed between all terms</li>
+    <li>From the AND result, view count for those documents are taken and ranked</li>
+    <li>For each term, maximum weighed zone is taken for the document while calculating rank scores.
+    eg: For a document, if the term algorithm is present in title and keyword, from our model,
+        title is most valued term. Hence for that document, and the term algorithm, title's zone weight
+        is taken. </li>
+    <li>Sum of the weights for all the terms in a document is computed.</li>
+    <li>Sorting of above result in descending order gives final rank</li>
+
+</ul>
 </body>
 </html>
