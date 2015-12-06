@@ -123,7 +123,44 @@ Each record has meta data for a book in json format and following are the entiti
 <p>Above weights are formulated after lot of query search experiments and intuitions.</p>
 <p>View counts are generated for only select few documents.</p>
 <p>Output of this phase is a list of tuple of document_id and score in sorted order.</p>
-
+<br/>
+<p>Following table shows the accuracy improvement in the search while adding view count as a parameter.</p>
+<p>Search term for this example was "thomas cormen"</p>
+<table border="1">
+<tr><td>Document_id </td><td> With View Rank </td><td> With View Rank</td></tr>
+<tr><td>i-bUBQAAQBAJ </td><td> 1 </td><td> 8</td></tr>
+<tr><td>h2xRPgAACAAJ </td><td> 2 </td><td> 18</td></tr>
+<tr><td>g8d3PwAACAAJ </td><td> 3 </td><td> 12</td></tr>
+<tr><td>z73loAEACAAJ </td><td> 4 </td><td> 14</td></tr>
+<tr><td>aefUBQAAQBAJ </td><td> 5 </td><td> 2</td></tr>
+<tr><td>jUF9BAAAQBAJ </td><td> 6 </td><td> 5</td></tr>
+<tr><td>pUGYSQAACAAJ </td><td> 7 </td><td> 23</td></tr>
+<tr><td>r-oGPLclJc0C </td><td> 8 </td><td> 6</td></tr>
+<tr><td>5kmsSgAACAAJ </td><td> 9 </td><td> 24</td></tr>
+<tr><td>46JvnQEACAAJ </td><td> 10 </td><td> 3</td></tr>
+<tr><td>unDKrQEACAAJ </td><td> 11 </td><td> 11</td></tr>
+<tr><td>U2P3NwAACAAJ </td><td> 12 </td><td> 7</td></tr>
+<tr><td>YsE2pwAACAAJ </td><td> 13 </td><td> 16</td></tr>
+<tr><td>JtlDAAAACAAJ </td><td> 14 </td><td> 19</td></tr>
+<tr><td>Ew--ngEACAAJ </td><td> 15 </td><td> 29</td></tr>
+<tr><td>ZLN9CQAAQBAJ </td><td> 16 </td><td> 32</td></tr>
+<tr><td>yfnloQEACAAJ </td><td> 17 </td><td> 25</td></tr>
+<tr><td>EUrXoAEACAAJ </td><td> 18 </td><td> 9</td></tr>
+<tr><td>COxdlgEACAAJ </td><td> 19 </td><td> 10</td></tr>
+<tr><td>7cNgPwAACAAJ </td><td> 20 </td><td> 20</td></tr>
+<tr><td>F3anBQAAQBAJ </td><td> 21 </td><td> 1</td></tr>
+<tr><td>NLngYyWFl_YC </td><td> 22 </td><td> 15</td></tr>
+<tr><td>m2QwnwEACAAJ </td><td> 23 </td><td> 13</td></tr>
+<tr><td>dEplHQAACAAJ </td><td> 24 </td><td> 21</td></tr>
+<tr><td>Jwr8jwEACAAJ </td><td> 25 </td><td> 17</td></tr>
+<tr><td>NdSXoAEACAAJ </td><td> 26 </td><td> 4</td></tr>
+<tr><td>AGAiAgAAQBAJ </td><td> 27 </td><td> 22</td></tr>
+<tr><td>he2koAEACAAJ </td><td> 28 </td><td> 27</td></tr>
+<tr><td>3QU2SgAACAAJ </td><td> 29 </td><td> 30</td></tr>
+<tr><td>nunPngEACAAJ </td><td> 30 </td><td> 31</td></tr>
+<tr><td>0hX5ygAACAAJ </td><td> 31 </td><td> 26</td></tr>
+<tr><td>mmFGSwAACAAJ </td><td> 32 </td><td> 28</td></tr>
+</table>
 
 <h4>Brief walk through about filter phase after Querying</h4>
 <ul>
@@ -138,7 +175,16 @@ Each record has meta data for a book in json format and following are the entiti
 
 </ul>
 
-<h2 id="query_gen">Results</h2>
+<h2 id="results">Results</h2>
 <p>Mini search engine was implemented successfully. </p>
+<p>Note that we had a total of 120,000 books in our sample data-set and hence a direct comparison between an established
+search engine like google wont give exact accuracy rate. However, for the books which have, following are findings.</p>
+<p>Following table shows the comparison of our search engines rank with the books which came 1st in google</p>
+<table border="1">
+    <tr><td>Term </td><td> Document Id </td><td> Rank in this system</td></tr>
+    <tr><td>clrs </td><td> i-bUBQAAQBAJ </td><td> 1</td></tr>
+    <tr><td>deception point </td><td> BjFZ0UQOUCgC </td><td> 1</td></tr>
+    <tr><td>bleak house </td><td> OeD4XMKlxUIC </td><td> 1</td></tr>
+</table>
 </body>
 </html>
