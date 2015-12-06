@@ -1,3 +1,5 @@
+This project is intended to work seamlessly in python2.7 and python3.4
+
 Sub projects (README of its project is inside their corresponding directory)
 - InitialDataExtraction(Data retrieval from Google Books API).
 - KeyWord(KeyWord generation using Stanford NLP)
@@ -25,11 +27,23 @@ ll. When Mark orders her to her knees the first time, she can\u2019t get there f
 - view_rdd eg: ('NLngYyWFl_YC', 1292215), where the data format is (doc_id, view_count)
 
 Query.py --> Query for document from indexed data
-- get_docs(query_term, zone_restriction) method has to be called as shown in main() method.
-- Only one the parameters has to be defined
-- q_term is used for searching the keyword across all zones
+- Before performing this step, perform indexing as mentioned before.
+- get_ranking(query_term, zone_restriction, VIEW_RANKED_RETRIEVAL) method has to be called as shown in main() method.
+- Only one of the parameters has to be defined
+- query_term is used for searching the keyword across all zones
 - zone_restriction is used if particular terms have to be restricted to search within a zone.
 - query_term: search term if it has to be searched across all the zones.
 - zone_restriction: dictionary whose keys are zone and the corresponding value is the search term of that zone.
 - eg: zone_restriction = {KEYWORDS: 'pop', CATEGORIES: 'art', TITLE: 'culture', PUBLISHER: 'macmillan'}
 - eg: q_term = 'cormen clrs'
+
+
+Dependencies for this project
+- nltk library
+- download "wordnet corpora" for using lemmatizer(nltk)
+
+Instructions for testing the code with sample data.
+- Copy the files in a directory of cluster
+- Copy the resources from given link. 
+- https://drive.google.com/a/uncc.edu/folderview?id=0B9gSr_XpY1b0VVdQVHZPb2RnU3M&usp=sharing
+- Note that, index_rdd can be avoided if planning to perform indexing operation (InvertedIndex.py)

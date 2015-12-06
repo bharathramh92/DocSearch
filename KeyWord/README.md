@@ -5,7 +5,7 @@ Project details
 - Issues with NER's were
     - Many unwanted words
     - Improper entity definition for the terms and hence unreliable
-- Proper Noun are not giving False Positives as in the former case
+- Proper Noun technique is not giving as many False Positives as in the former case
 
 - Json data manipulation was performed using gson library
 
