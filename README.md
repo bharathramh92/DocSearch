@@ -1,5 +1,6 @@
 This project is intended to work seamlessly in python2.7 and python3.4
 
+P.S: For more detailed explanation about the algorithm, use the following link. http://bharathramh92.github.io/DocSearch/
 Sub projects (README of its project is inside their corresponding directory)
 - InitialDataExtraction(Data retrieval from Google Books API).
 - KeyWord(KeyWord generation using Stanford NLP)
